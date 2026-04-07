@@ -1,0 +1,130 @@
+@import 'tailwindcss';
+
+/* Dark = TradingView-style terminal (default) */
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+  --app-terminal-bg: #0f0f0f;
+  --app-terminal-surface: #1e222d;
+  --app-terminal-elevated: #2a2e39;
+  --app-terminal-border: #363a45;
+  --app-terminal-muted: #787b86;
+  --app-terminal-text: #d1d4dc;
+  --app-terminal-grid: #363c4e;
+  --app-up: #26a69a;
+  --app-down: #ef5350;
+  --app-accent: #2962ff;
+  --app-brand: #f97316;
+  --app-crypto: #9c6bff;
+  --app-forex: #5b9cf6;
+  --app-metals: #fbc02d;
+  --app-news-bg: rgba(42, 31, 61, 0.88);
+  --app-news-border: rgba(106, 77, 143, 0.55);
+  --app-news-hover: rgba(53, 37, 72, 0.92);
+  --app-news-icon: #b39ddb;
+  --app-chart-bg: #0f0f0f;
+  --app-chart-text: #b2b5be;
+  --app-chart-grid: #363c4e;
+  --app-chart-border: #363a45;
+  --app-chart-crosshair: rgba(117, 134, 150, 0.45);
+  --app-chart-vol-up: rgba(38, 166, 154, 0.45);
+  --app-chart-vol-down: rgba(239, 83, 80, 0.45);
+  --app-focus-ring: var(--app-accent);
+}
+
+/* Light = TradingView-style light workspace */
+[data-theme='light'] {
+  color-scheme: light;
+  --app-terminal-bg: #ffffff;
+  --app-terminal-surface: #f0f3fa;
+  --app-terminal-elevated: #e0e3eb;
+  --app-terminal-border: #d1d4dc;
+  --app-terminal-muted: #787b86;
+  --app-terminal-text: #131722;
+  --app-terminal-grid: #e0e3eb;
+  --app-up: #089981;
+  --app-down: #f23645;
+  --app-accent: #2962ff;
+  --app-brand: #f97316;
+  --app-crypto: #7c4dff;
+  --app-forex: #1565c0;
+  --app-metals: #f57c00;
+  --app-news-bg: rgba(237, 231, 246, 0.96);
+  --app-news-border: rgba(124, 77, 255, 0.35);
+  --app-news-hover: rgba(225, 215, 241, 0.98);
+  --app-news-icon: #7c4dff;
+  --app-chart-bg: #ffffff;
+  --app-chart-text: #131722;
+  --app-chart-grid: #e0e3eb;
+  --app-chart-border: #d1d4dc;
+  --app-chart-crosshair: rgba(19, 23, 34, 0.12);
+  --app-chart-vol-up: rgba(8, 153, 129, 0.4);
+  --app-chart-vol-down: rgba(242, 54, 69, 0.4);
+  --app-focus-ring: var(--app-accent);
+}
+
+@theme {
+  --font-sans: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Roboto Mono', ui-monospace, monospace;
+
+  --color-terminal-bg: var(--app-terminal-bg);
+  --color-terminal-surface: var(--app-terminal-surface);
+  --color-terminal-elevated: var(--app-terminal-elevated);
+  --color-terminal-border: var(--app-terminal-border);
+  --color-terminal-muted: var(--app-terminal-muted);
+  --color-terminal-text: var(--app-terminal-text);
+  --color-terminal-grid: var(--app-terminal-grid);
+
+  --color-up: var(--app-up);
+  --color-down: var(--app-down);
+  --color-accent: var(--app-accent);
+  --color-accent-dim: color-mix(in srgb, var(--app-accent) 18%, transparent);
+  --color-brand: var(--app-brand);
+  --color-crypto: var(--app-crypto);
+  --color-forex: var(--app-forex);
+  --color-metals: var(--app-metals);
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    @apply m-0 min-h-screen bg-terminal-bg text-terminal-text font-sans text-[13px] leading-normal;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--app-accent) 35%, transparent);
+    color: var(--app-terminal-text);
+  }
+
+  /* Visible focus for keyboard users; mouse clicks stay clean */
+  :where(button, [href], input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--app-focus-ring);
+    outline-offset: 2px;
+  }
+
+  :where(button, [href], input, select, textarea):focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+@layer utilities {
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200];
+    @apply focus:rounded-md focus:bg-accent focus:px-4 focus:py-2.5 focus:text-white;
+    @apply focus:font-medium focus:shadow-lg focus:outline-none;
+  }
+}

@@ -1,0 +1,25 @@
+# Frontend
+frontend/node_modules/
+frontend/dist/
+*.local
+
+# Python
+backend/.venv/
+backend/venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Bronze / Silver data (large); keep folders via .gitkeep
+data/bronze/*.parquet
+data/silver/*.parquet
+data/gold/*.parquet
+
+# Env
+.env
+.env.local
+
+# Root (legacy if node_modules left behind)
+/node_modules/
+/dist/
