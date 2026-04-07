@@ -51,7 +51,7 @@ python scripts/run_gold_pipeline.py      # Phase 3 → data/gold/
 
 If `node_modules` or `dist` still exist at the **repository root** after the move, delete them and use only `frontend/node_modules`.
 
-
+```bash
 market-pipeline/
 ├── ingestion/
 │   ├── batch/
@@ -117,3 +117,4 @@ market-pipeline/
 ├── requirements.txt
 ├── README.md
 └── .gitignore
+```
