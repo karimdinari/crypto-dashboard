@@ -1,4 +1,3 @@
-orange tigre, yes — this structure is good for the **backend**, and it is actually cleaner than the previous one.
 
 The best move is:
 
