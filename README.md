@@ -50,3 +50,70 @@ python scripts/run_gold_pipeline.py      # Phase 3 → data/gold/
 ## Legacy folders
 
 If `node_modules` or `dist` still exist at the **repository root** after the move, delete them and use only `frontend/node_modules`.
+
+
+market-pipeline/
+├── ingestion/
+│   ├── batch/
+│   │   ├── coingecko_ingestor.py       # crypto prices via REST
+│   │   ├── exchangerate_ingestor.py    # forex rates
+│   │   ├── metals_csv_loader.py        # XAU/XAG from CSV
+│   │   └── base_ingestor.py            # shared retry logic
+│   └── streaming/
+│       ├── binance_ws_producer.py      # Binance WS → Kafka
+│       ├── kafka_consumer.py           # Kafka → Bronze
+│       └── kafka_config.py
+│
+├── lakehouse/
+│   ├── bronze/
+│   │   ├── write_bronze.py
+│   │   └── schema_bronze.py
+│   ├── silver/
+│   │   ├── clean_silver.py
+│   │   └── schema_silver.py
+│   ├── gold/
+│   │   ├── build_gold.py
+│   │   └── schema_gold.py
+│   ├── minio_client.py                 # MinIO / S3 wrapper
+│   └── delta_utils.py                  # Delta Lake read/write
+│
+├── transformations/
+│   ├── dbt_project/
+│   │   ├── models/
+│   │   │   ├── silver_prices.sql
+│   │   │   ├── gold_metrics.sql        # MA7, MA30, % change
+│   │   │   └── gold_correlation.sql    # cross-asset matrix
+│   │   ├── dbt_project.yml
+│   │   └── profiles.yml
+│   ├── indicators.py                   # MA, RSI, Bollinger
+│   ├── volatility.py                   # rolling std dev
+│   └── correlation.py                  # Pearson matrix
+│
+├── orchestration/
+│   ├── dags/
+│   │   ├── dag_batch_ingest.py         # hourly / daily
+│   │   ├── dag_silver_transform.py
+│   │   └── dag_gold_build.py
+│   └── airflow_config.py
+│
+├── tests/
+│   ├── test_schema_bronze.py           # expected columns present
+│   ├── test_clean_silver.py            # nulls removed correctly
+│   ├── test_indicators.py              # MA7 calculation
+│   ├── test_null_checks.py             # close_price not null
+│   └── test_price_range.py             # close > 0, high >= low
+│
+├── config/
+│   ├── settings.py                     # env vars, constants
+│   ├── .env.example
+│   └── logging_config.py              # structured JSON logs
+│
+├── infra/
+│   ├── docker-compose.yml              # full stack
+│   ├── Dockerfile.airflow
+│   ├── Dockerfile.api
+│   └── kafka-topics.sh                 # topic init script
+│
+├── requirements.txt
+├── README.md
+└── .gitignore
