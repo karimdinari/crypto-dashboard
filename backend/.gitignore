@@ -1,0 +1,40 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.env
+.env.*
+*.egg-info/
+dist/
+build/
+.coverage
+htmlcov/
+
+# Data lakehouse
+data/
+lakehouse/
+*.parquet
+*.delta
+*.duckdb
+*.db
+
+# logs
+logs/
+*.log
+
+# Airflow
+airflow.db
+airflow-webserver.pid
+airflow.cfg
+
+# Kafka
+kafka-data/
+zookeeper-data/
+
+# IDE
+.vscode/
+.idea/
