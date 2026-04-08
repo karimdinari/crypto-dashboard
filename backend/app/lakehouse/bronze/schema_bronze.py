@@ -14,6 +14,7 @@ BRONZE_CRYPTO_COLUMNS = [
     "market_cap",
     "total_volume",
     "ingestion_time",
+    
 ]
 
 BRONZE_FOREX_COLUMNS = [
