@@ -16,7 +16,7 @@ htmlcov/
 
 # Data lakehouse
 data/
-lakehouse/
+
 *.parquet
 *.delta
 *.duckdb
