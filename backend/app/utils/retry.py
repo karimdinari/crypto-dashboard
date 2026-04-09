@@ -1,6 +1,6 @@
 import time
 import functools
-from backend.app.config.logging_config import get_logger
+from app.config.logging_config import get_logger
 
 logger = get_logger("retry_util")
 

@@ -7,7 +7,7 @@ import pandas as pd
 
 from app.config.logging_config import get_logger
 from app.config.settings import BRONZE_PATH
-from app.utils.validators import validate_required_columns
+from app.utils.validation_utils import validate_required_columns
 
 logger = get_logger(__name__)
 
