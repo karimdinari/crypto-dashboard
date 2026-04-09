@@ -25,6 +25,12 @@ def _default_project_root() -> str:
     # backend/app/config/settings.py -> parents[3] == repository root
     return str(Path(__file__).resolve().parents[3])
 
+
+def _default_backend_root() -> str:
+    """Directory that contains ``app/`` and typically ``data/`` and ``lakehouse/``."""
+    # backend/app/config/settings.py -> parents[2] == backend/
+    return str(Path(__file__).resolve().parents[2])
+
 # -------------------------------------------------------------------
 # Environment
 # -------------------------------------------------------------------
@@ -51,16 +57,19 @@ EXCHANGERATE_API_KEY = os.getenv("EXCHANGERATE_API_KEY", "")
 # Paths
 # -------------------------------------------------------------------
 PROJECT_ROOT = os.getenv("PROJECT_ROOT", _default_project_root())
-DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+BACKEND_ROOT = os.getenv("BACKEND_ROOT", _default_backend_root())
+# Sample + seed CSVs live under backend/data/ in this repo layout
+DATA_DIR = os.getenv("DATA_DIR", os.path.join(BACKEND_ROOT, "data"))
 SAMPLE_DATA_PATH = os.path.join(DATA_DIR, "sample")
 SEED_DATA_PATH = os.path.join(DATA_DIR, "seeds")
 
-LAKEHOUSE_DIR = os.getenv("LAKEHOUSE_DIR", "lakehouse")
+# Default under backend/ so Parquet lands in one place regardless of shell cwd
+LAKEHOUSE_DIR = os.getenv("LAKEHOUSE_DIR", os.path.join(BACKEND_ROOT, "lakehouse"))
 BRONZE_PATH = os.path.join(LAKEHOUSE_DIR, "bronze")
 SILVER_PATH = os.path.join(LAKEHOUSE_DIR, "silver")
 GOLD_PATH = os.path.join(LAKEHOUSE_DIR, "gold")
 
-LOGS_DIR = os.path.join(PROJECT_ROOT, "logs")
+LOGS_DIR = os.path.join(BACKEND_ROOT, "logs")
 
 # -------------------------------------------------------------------
 # Kafka

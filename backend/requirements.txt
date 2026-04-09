@@ -1,60 +1,15 @@
-pandas
-polars
-requests
-python-dotenv
-loguru
-pyarrow
-duckdb
+# Batch ingestion + bronze lakehouse (imports used under app/)
+pandas>=2.2,<3
+requests>=2.31,<3
+python-dotenv>=1.0,<2
+python-json-logger>=2.0,<4
 
-
-
-
-# # Pin versions as you add dependencies.
-# # ── Ingestion (Batch) ──
-# requests==2.32.3
-# httpx==0.27.0
-
-# # ── Ingestion (Streaming) ──
-# kafka-python==2.0.2
-# websocket-client==1.8.0
-
-# # ── Storage ──
-# minio==7.2.15
-# sqlalchemy==2.0.40
-# psycopg2-binary==2.9.10
-
-# # ── Transformation ──
-# pandas==2.2.3
-# polars==1.30.0
-# pyarrow==19.0.1
-
-# # ── Orchestration ──
-# apache-airflow==2.10.5
-
-# # ── ML ──
-# scikit-learn==1.6.1
-# joblib==1.4.2
-
-# # ── API ──
-# fastapi==0.115.12
-# uvicorn==0.34.2
-
-# # ── Visualization ──
-# streamlit==1.45.1
-# plotly==6.1.2
-
-# # ── Testing & Quality ──
-# pytest==8.3.5
-# great-expectations==1.3.12
-
-# # ── Logging ──
-# python-json-logger==3.3.0
-# structlog==25.1.0
-
-# # ── Config ──
-# python-dotenv==1.1.0
-
-# # ── Utilities ──
-# pytz==2025.2
-
-
+# --- Optional / not imported yet (enable when you add code) ---
+# kafka-python>=2.0,<3          # streaming + KAFKA_* in settings.py
+# minio>=7.2,<8                # MINIO_* in settings.py
+# polars>=1.0,<2               # faster frames (not used in current code)
+# pyarrow>=15,<20              # parquet / Arrow interop
+# duckdb>=1.0,<2               # local analytics
+# fastapi>=0.115,<1            # API layer
+# uvicorn[standard]>=0.30,<1
+# pytest>=8,<9                # tests

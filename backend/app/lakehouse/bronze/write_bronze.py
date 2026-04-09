@@ -110,6 +110,13 @@ def write_bronze_table(
     if dataset_name not in DATASET_SCHEMA_MAP:
         raise ValueError(f"Unsupported Bronze dataset: {dataset_name}")
 
+    if df.empty:
+        logger.warning(
+            "Skipping Bronze write — empty dataframe",
+            extra={"dataset_name": dataset_name},
+        )
+        return Path(BRONZE_PATH) / dataset_name / "data.parquet"
+
     expected_columns = DATASET_SCHEMA_MAP[dataset_name]
     _validate_required_columns(df, expected_columns)
 

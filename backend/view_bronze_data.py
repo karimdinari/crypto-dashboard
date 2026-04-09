@@ -3,10 +3,12 @@ Bronze Layer Data Viewer
 View and analyze all data collected in the Bronze layer.
 """
 
-import pandas as pd
-from pathlib import Path
-from datetime import datetime
 import sys
+from pathlib import Path
+
+import pandas as pd
+
+from app.config.settings import BRONZE_PATH
 
 # Color codes for terminal output
 class Colors:
@@ -154,7 +156,21 @@ def view_metals_data(base_path):
     try:
         df = pd.read_parquet(metals_path)
         print(f"{Colors.OKGREEN}✅ Found {len(df)} metals price records{Colors.ENDC}\n")
-        print(df.to_string(index=False))
+        print(f"{Colors.BOLD}Columns:{Colors.ENDC} {', '.join(df.columns)}")
+        if "timestamp" in df.columns:
+            ts = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+            print(f"{Colors.BOLD}Date range:{Colors.ENDC} {ts.min()} … {ts.max()}")
+        print(f"{Colors.BOLD}By symbol:{Colors.ENDC}")
+        if "display_symbol" in df.columns:
+            print(df.groupby("display_symbol").size().to_string())
+        preview_n = 5
+        print(f"\n{Colors.BOLD}First {preview_n} rows:{Colors.ENDC}")
+        print(df.head(preview_n).to_string(index=False))
+        print(f"\n{Colors.BOLD}Last {preview_n} rows:{Colors.ENDC}")
+        print(df.tail(preview_n).to_string(index=False))
+        print(
+            f"\n{Colors.WARNING}(Full table omitted — use pandas or --export.){Colors.ENDC}"
+        )
         return df
     except Exception as e:
         print(f"{Colors.FAIL}❌ Error reading metals data: {e}{Colors.ENDC}")
@@ -262,39 +278,35 @@ def export_to_csv(base_path):
         print(f"{Colors.WARNING}⚠️  No data to export{Colors.ENDC}")
 
 
-def main():
-    """Main viewer function"""
-    print_header("🏛️  BRONZE LAYER DATA VIEWER")
-    
-    base_path = Path("backend/lakehouse/bronze")
-    
+def main() -> None:
+    """Print Bronze summaries. Run from ``backend/``: ``python view_bronze_data.py``"""
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+    print_header("BRONZE LAYER DATA VIEWER")
+
+    base_path = Path(BRONZE_PATH).resolve()
+
     if not base_path.exists():
         print(f"{Colors.FAIL}❌ Bronze layer not found at {base_path}{Colors.ENDC}")
-        print(f"{Colors.WARNING}   Run the ingestors first to create data.{Colors.ENDC}")
+        print(f"{Colors.WARNING}   Run: python -m app.ingestion.batch.run_batch_ingestion{Colors.ENDC}")
         sys.exit(1)
-    
-    # View all datasets
-    crypto_df = view_crypto_data(base_path)
-    forex_df = view_forex_data(base_path)
-    metals_df = view_metals_data(base_path)
-    news_df = view_news_data(base_path)
-    
-    # Show stats
+
+    view_crypto_data(base_path)
+    view_forex_data(base_path)
+    view_metals_data(base_path)
+    view_news_data(base_path)
     show_bronze_stats(base_path)
-    
-    # Ask if user wants to export
-    print(f"\n{Colors.BOLD}Export Options:{Colors.ENDC}")
-    print("  1. Export all to CSV")
-    print("  2. Skip export")
-    
-    try:
-        choice = input(f"\n{Colors.OKCYAN}Enter choice (1 or 2): {Colors.ENDC}").strip()
-        if choice == "1":
-            export_to_csv(base_path)
-    except KeyboardInterrupt:
-        print(f"\n{Colors.WARNING}Skipping export{Colors.ENDC}")
-    
-    print_header("✅ VIEWER COMPLETE")
+
+    if "--export" in sys.argv:
+        export_to_csv(base_path)
+    else:
+        print(f"\n{Colors.BOLD}Tip:{Colors.ENDC} add --export to write CSVs under bronze_exports/")
+
+    print_header("VIEWER COMPLETE")
 
 
 if __name__ == "__main__":
