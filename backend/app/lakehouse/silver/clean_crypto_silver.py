@@ -117,7 +117,7 @@ def _write(df: pd.DataFrame) -> None:
 # Main
 # ---------------------------------------------------------------------------
 
-def run_clean_crypto_silver() -> pd.DataFrame:
+def run_clean_crypto_silver(*, write_silver: bool = True) -> pd.DataFrame:
     logger.info("Starting crypto Silver cleaning")
 
     if not BRONZE_FILE.exists():
@@ -137,7 +137,8 @@ def run_clean_crypto_silver() -> pd.DataFrame:
 
     df = df[[c for c in SILVER_COLUMNS if c in df.columns]]
 
-    _write(df)
+    if write_silver:
+        _write(df)
     return df
 
 
