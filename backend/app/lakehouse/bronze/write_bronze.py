@@ -9,8 +9,10 @@ from typing import Literal
 
 import pandas as pd
 
-from backend.app.config.logging_config import get_logger
-from backend.app.config.settings import BRONZE_PATH
+from app.config.logging_config import get_logger
+from app.config.settings import BRONZE_PATH
+from app.utils.validation_utils import validate_required_columns
+
 
 logger = get_logger(__name__)
 

@@ -1,6 +1,26 @@
+from __future__ import annotations
+
+from typing import Iterable
+
+import pandas as pd
+
 from app.config.logging_config import get_logger
 
 logger = get_logger("validation_utils")
+
+
+def validate_required_columns(df: pd.DataFrame, required_columns: Iterable[str]) -> None:
+    """
+    Ensure ``df`` contains every column name in ``required_columns``.
+    Raises ValueError listing any missing names.
+    """
+    required = list(required_columns)
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise ValueError(
+            f"DataFrame missing required columns: {missing}. "
+            f"Present columns: {list(df.columns)}"
+        )
 
 def is_dict(obj):
     """Check if the object is a dictionary."""
