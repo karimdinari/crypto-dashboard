@@ -1,3 +1,7 @@
+"""
+Bronze layer writer utility.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -5,9 +9,8 @@ from typing import Literal
 
 import pandas as pd
 
-from app.config.logging_config import get_logger
-from app.config.settings import BRONZE_PATH
-from app.utils.validators import validate_required_columns
+from backend.app.config.logging_config import get_logger
+from backend.app.config.settings import BRONZE_PATH
 
 logger = get_logger(__name__)
 
@@ -63,7 +66,24 @@ DATASET_SCHEMA_MAP = {
 
 
 def _ensure_directory(path: Path) -> None:
+    """Create directory if it doesn't exist"""
     path.mkdir(parents=True, exist_ok=True)
+
+
+def _validate_required_columns(df: pd.DataFrame, expected_columns: list[str]) -> None:
+    """
+    Validate that DataFrame has all required columns.
+    
+    Args:
+        df: DataFrame to validate
+        expected_columns: List of required column names
+        
+    Raises:
+        ValueError: If required columns are missing
+    """
+    missing = set(expected_columns) - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
 
 
 def write_bronze_table(
@@ -71,11 +91,25 @@ def write_bronze_table(
     dataset_name: str,
     mode: Literal["overwrite", "append"] = "overwrite",
 ) -> Path:
+    """
+    Write DataFrame to Bronze layer.
+    
+    Args:
+        df: DataFrame to write
+        dataset_name: Name of the dataset (e.g., 'crypto_prices')
+        mode: Write mode - 'overwrite' or 'append'
+        
+    Returns:
+        Path to written file
+        
+    Raises:
+        ValueError: If dataset name is invalid or columns are missing
+    """
     if dataset_name not in DATASET_SCHEMA_MAP:
         raise ValueError(f"Unsupported Bronze dataset: {dataset_name}")
 
     expected_columns = DATASET_SCHEMA_MAP[dataset_name]
-    validate_required_columns(df, expected_columns)
+    _validate_required_columns(df, expected_columns)
 
     dataset_dir = Path(BRONZE_PATH) / dataset_name
     _ensure_directory(dataset_dir)
