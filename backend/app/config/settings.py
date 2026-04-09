@@ -35,7 +35,8 @@ DEBUG = os.getenv("DEBUG", "true").lower() == "true"
 # API base URLs
 # -------------------------------------------------------------------
 COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3"
-EXCHANGERATE_BASE_URL = "https://api.exchangerate.host"
+# EXCHANGERATE_BASE_URL = "https://api.exchangeratesapi.io"
+EXCHANGERATE_BASE_URL = "https://api.frankfurter.app"
 FINNHUB_BASE_URL = "https://finnhub.io/api/v1"
 BINANCE_WS_BASE_URL = "wss://stream.binance.com:9443/ws"
 # YFINANCE_ENABLED = True  # informational flag for metals ingestion
@@ -44,6 +45,7 @@ BINANCE_WS_BASE_URL = "wss://stream.binance.com:9443/ws"
 # API keys
 # -------------------------------------------------------------------
 FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "")
+EXCHANGERATE_API_KEY = os.getenv("EXCHANGERATE_API_KEY", "")
 
 # -------------------------------------------------------------------
 # Paths
