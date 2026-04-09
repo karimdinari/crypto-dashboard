@@ -6,13 +6,13 @@ from typing import Any, Dict, Optional
 
 import requests
 
-from app.config.logging_config import get_logger
-from app.config.settings import (
+from backend.app.config.logging_config import get_logger
+from backend.app.config.settings import (
     DEFAULT_REQUEST_TIMEOUT_SECONDS,
     DEFAULT_RETRY_BACKOFF_SECONDS,
     DEFAULT_RETRY_COUNT,
 )
-from app.utils.retry import retry
+from backend.app.utils.retry import retry
 
 
 class BaseIngestor(ABC):
@@ -30,8 +30,8 @@ class BaseIngestor(ABC):
         return datetime.now(timezone.utc)
 
     @retry(
-        max_attempts=DEFAULT_RETRY_COUNT,
-        backoff_seconds=DEFAULT_RETRY_BACKOFF_SECONDS,
+        retries=DEFAULT_RETRY_COUNT,           # ✅ Changed from max_attempts
+        delay=DEFAULT_RETRY_BACKOFF_SECONDS,   # ✅ Changed from backoff_seconds
     )
     def get_json(
         self,
