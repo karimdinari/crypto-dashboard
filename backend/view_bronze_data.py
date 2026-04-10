@@ -185,7 +185,6 @@ def view_news_data(base_path):
     
     if not news_path.exists():
         print(f"{Colors.WARNING}⚠️  No news data found yet{Colors.ENDC}")
-        print(f"    (This will be created by Person 2)")
         return None
     
     try:
@@ -203,12 +202,14 @@ def view_news_data(base_path):
                 print(f"    Symbol:  {row['symbol']}")
                 print(f"    Source:  {row.get('source_name', 'N/A')}")
                 print(f"    Time:    {row['timestamp']}")
+                if pd.notna(row.get('summary')):
+                    summary = row['summary'][:100] + "..." if len(str(row['summary'])) > 100 else row['summary']
+                    print(f"    Summary: {summary}")
         
         return df
     except Exception as e:
         print(f"{Colors.FAIL}❌ Error reading news data: {e}{Colors.ENDC}")
         return None
-
 
 def show_bronze_stats(base_path):
     """Show overall Bronze layer statistics"""
