@@ -1,6 +1,7 @@
 """
 CoinGecko batch ingestor for crypto price data.
 Fetches Bitcoin and Ethereum historical prices and market data.
+Automatically writes to Bronze layer.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ import pandas as pd
 from app.config.assets import CRYPTO_ASSETS
 from app.config.settings import COINGECKO_BASE_URL
 from app.ingestion.batch.base_ingestor import BaseIngestor
+from app.lakehouse.bronze.write_bronze import write_bronze_table  # ✅ ADDED
 
 
 class CoinGeckoIngestor(BaseIngestor):
@@ -72,7 +74,6 @@ class CoinGeckoIngestor(BaseIngestor):
                         "price": price_data.get("usd"),
                         "market_cap": price_data.get("usd_market_cap"),
                         "total_volume": price_data.get("usd_24h_vol"),
-                        "timestamp": self.get_ingestion_time().isoformat(),
                         "ingestion_time": self.get_ingestion_time().isoformat(),
                     }
 
@@ -126,7 +127,7 @@ class CoinGeckoIngestor(BaseIngestor):
             params = {
                 "vs_currency": vs_currency,
                 "days": str(self.days),
-                "interval": "daily",  # daily data points
+                "interval": "daily",
             }
 
             try:
@@ -137,12 +138,10 @@ class CoinGeckoIngestor(BaseIngestor):
                     market_caps = response.get("market_caps", [])
                     volumes = response.get("total_volumes", [])
 
-                    # Each item is [timestamp_ms, value]
                     for i, price_entry in enumerate(prices):
                         timestamp_ms = price_entry[0]
                         price = price_entry[1]
                         
-                        # Convert timestamp to datetime
                         dt = datetime.fromtimestamp(timestamp_ms / 1000)
 
                         record = {
@@ -153,7 +152,6 @@ class CoinGeckoIngestor(BaseIngestor):
                             "price": price,
                             "market_cap": market_caps[i][1] if i < len(market_caps) else None,
                             "total_volume": volumes[i][1] if i < len(volumes) else None,
-                            "timestamp": dt.isoformat(),
                             "ingestion_time": ingestion_time,
                         }
 
@@ -202,37 +200,90 @@ class CoinGeckoIngestor(BaseIngestor):
         else:
             return self.fetch_current()
 
+    def ingest_and_write(self, historical: bool = True, mode: str = "overwrite") -> bool:
+        """
+        Fetch crypto data and write to Bronze layer.
+        
+        Args:
+            historical: If True, fetch historical; if False, fetch current
+            mode: Write mode - 'append' or 'overwrite'
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        self.logger.info(
+            f"Starting CoinGecko ingestion ({'historical' if historical else 'current'}) with Bronze write"
+        )
+        
+        try:
+            df = self.fetch(historical=historical)
+            
+            if df is None or df.empty:
+                self.logger.warning("No data to write to Bronze")
+                return False
+            
+            output_path = write_bronze_table(
+                df=df,
+                dataset_name="crypto_prices",
+                mode=mode
+            )
+            
+            self.logger.info(
+                f"✅ Crypto data written to Bronze",
+                extra={
+                    "output_path": str(output_path),
+                    "records": len(df),
+                    "mode": mode,
+                    "historical": historical
+                }
+            )
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(
+                f"❌ Failed to ingest and write crypto data",
+                extra={"error": str(e)}
+            )
+            return False
 
-def ingest_coingecko(days: int = 30, historical: bool = True) -> Optional[pd.DataFrame]:
+
+def ingest_coingecko(days: int = 30, historical: bool = True, write_to_bronze: bool = False, mode: str = "overwrite") -> Optional[pd.DataFrame]:
     """
     Convenience function to run CoinGecko ingestion.
 
     Args:
         days: Number of days of historical data (default: 30)
         historical: If True, fetch historical; if False, fetch current
+        write_to_bronze: If True, write to Bronze layer
+        mode: Write mode - 'append' or 'overwrite'
 
     Returns:
         DataFrame with crypto price data
     """
     ingestor = CoinGeckoIngestor(days=days)
-    return ingestor.fetch(historical=historical)
+    
+    if write_to_bronze:
+        success = ingestor.ingest_and_write(historical=historical, mode=mode)
+        if success:
+            return ingestor.fetch(historical=historical)
+        return None
+    else:
+        return ingestor.fetch(historical=historical)
 
 
 if __name__ == "__main__":
-    # Test run - fetch 30 days of historical data
+    # ✅ When run directly, fetch AND write to Bronze
     print("\n" + "="*60)
-    print("Fetching 30 days of historical crypto data...")
+    print("CoinGecko Historical Ingestion → Bronze Layer")
     print("="*60 + "\n")
     
-    df = ingest_coingecko(days=30, historical=True)
+    ingestor = CoinGeckoIngestor(days=30)
+    success = ingestor.ingest_and_write(historical=True, mode="overwrite")
 
-    if df is not None:
+    if success:
         print(f"\n✅ CoinGecko Historical Ingestion Successful")
-        print(f"Total Records: {len(df)}")
-        print(f"Date Range: {df['timestamp'].min()} to {df['timestamp'].max()}")
-        print(f"\nFirst 5 records:")
-        print(df.head().to_string())
-        print(f"\nLast 5 records:")
-        print(df.tail().to_string())
+        print(f"Data written to: lakehouse/bronze/crypto_prices/data.parquet")
+        print(f"\nRun to view: python view_bronze_data.py")
     else:
         print("\n❌ CoinGecko Ingestion Failed")

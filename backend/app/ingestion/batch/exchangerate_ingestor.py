@@ -1,6 +1,7 @@
 """
 ExchangeRate batch ingestor for forex rates.
 Fetches EUR/USD and GBP/USD historical exchange rates.
+Automatically writes to Bronze layer.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ import pandas as pd
 from app.config.assets import FOREX_ASSETS
 from app.config.settings import EXCHANGERATE_BASE_URL
 from app.ingestion.batch.base_ingestor import BaseIngestor
+from app.lakehouse.bronze.write_bronze import write_bronze_table  # ✅ ADDED
 
 
 class ExchangeRateIngestor(BaseIngestor):
@@ -62,7 +64,6 @@ class ExchangeRateIngestor(BaseIngestor):
 
                 if response and "rates" in response and quote in response["rates"]:
                     rate = response["rates"][quote]
-                    date = response.get("date")
 
                     record = {
                         "symbol": symbol,
@@ -72,7 +73,6 @@ class ExchangeRateIngestor(BaseIngestor):
                         "base_currency": base,
                         "quote_currency": quote,
                         "exchange_rate": rate,
-                        "timestamp": date or ingestion_time,
                         "ingestion_time": ingestion_time,
                     }
 
@@ -109,7 +109,6 @@ class ExchangeRateIngestor(BaseIngestor):
         all_records = []
         ingestion_time = self.get_ingestion_time().isoformat()
 
-        # Calculate date range
         end_date = datetime.now()
         start_date = end_date - timedelta(days=self.days)
 
@@ -123,7 +122,6 @@ class ExchangeRateIngestor(BaseIngestor):
                 extra={"base": base, "quote": quote, "days": self.days}
             )
 
-            # Frankfurter historical endpoint
             url = f"{self.base_url}/{start_date.strftime('%Y-%m-%d')}.."
 
             params = {
@@ -149,7 +147,6 @@ class ExchangeRateIngestor(BaseIngestor):
                                 "base_currency": base,
                                 "quote_currency": quote,
                                 "exchange_rate": rate,
-                                "timestamp": date_str,
                                 "ingestion_time": ingestion_time,
                             }
 
@@ -198,37 +195,90 @@ class ExchangeRateIngestor(BaseIngestor):
         else:
             return self.fetch_current()
 
+    def ingest_and_write(self, historical: bool = True, mode: str = "overwrite") -> bool:
+        """
+        Fetch forex data and write to Bronze layer.
+        
+        Args:
+            historical: If True, fetch historical; if False, fetch current
+            mode: Write mode - 'append' or 'overwrite'
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        self.logger.info(
+            f"Starting Frankfurter ingestion ({'historical' if historical else 'current'}) with Bronze write"
+        )
+        
+        try:
+            df = self.fetch(historical=historical)
+            
+            if df is None or df.empty:
+                self.logger.warning("No data to write to Bronze")
+                return False
+            
+            output_path = write_bronze_table(
+                df=df,
+                dataset_name="forex_rates",
+                mode=mode
+            )
+            
+            self.logger.info(
+                f"✅ Forex data written to Bronze",
+                extra={
+                    "output_path": str(output_path),
+                    "records": len(df),
+                    "mode": mode,
+                    "historical": historical
+                }
+            )
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(
+                f"❌ Failed to ingest and write forex data",
+                extra={"error": str(e)}
+            )
+            return False
 
-def ingest_exchangerate(days: int = 30, historical: bool = True) -> Optional[pd.DataFrame]:
+
+def ingest_exchangerate(days: int = 30, historical: bool = True, write_to_bronze: bool = False, mode: str = "overwrite") -> Optional[pd.DataFrame]:
     """
     Convenience function to run ExchangeRate ingestion.
 
     Args:
         days: Number of days of historical data (default: 30)
         historical: If True, fetch historical; if False, fetch current
+        write_to_bronze: If True, write to Bronze layer
+        mode: Write mode - 'append' or 'overwrite'
 
     Returns:
         DataFrame with forex rate data
     """
     ingestor = ExchangeRateIngestor(days=days)
-    return ingestor.fetch(historical=historical)
+    
+    if write_to_bronze:
+        success = ingestor.ingest_and_write(historical=historical, mode=mode)
+        if success:
+            return ingestor.fetch(historical=historical)
+        return None
+    else:
+        return ingestor.fetch(historical=historical)
 
 
 if __name__ == "__main__":
-    # Test run - fetch 30 days of historical data
+    # ✅ When run directly, fetch AND write to Bronze
     print("\n" + "="*60)
-    print("Fetching 30 days of historical forex data...")
+    print("Frankfurter Historical Ingestion → Bronze Layer")
     print("="*60 + "\n")
     
-    df = ingest_exchangerate(days=30, historical=True)
+    ingestor = ExchangeRateIngestor(days=30)
+    success = ingestor.ingest_and_write(historical=True, mode="overwrite")
 
-    if df is not None:
+    if success:
         print(f"\n✅ Forex Historical Ingestion Successful")
-        print(f"Total Records: {len(df)}")
-        print(f"Date Range: {df['timestamp'].min()} to {df['timestamp'].max()}")
-        print(f"\nFirst 5 records:")
-        print(df.head().to_string())
-        print(f"\nLast 5 records:")
-        print(df.tail().to_string())
+        print(f"Data written to: lakehouse/bronze/forex_rates/data.parquet")
+        print(f"\nRun to view: python view_bronze_data.py")
     else:
         print("\n❌ Forex Ingestion Failed")
