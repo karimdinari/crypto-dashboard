@@ -9,9 +9,9 @@ from typing import Optional
 
 import pandas as pd
 
-from backend.app.config.assets import FOREX_ASSETS
-from backend.app.config.settings import EXCHANGERATE_BASE_URL
-from backend.app.ingestion.batch.base_ingestor import BaseIngestor
+from app.config.assets import FOREX_ASSETS
+from app.config.settings import EXCHANGERATE_BASE_URL
+from app.ingestion.batch.base_ingestor import BaseIngestor
 
 
 class ExchangeRateIngestor(BaseIngestor):

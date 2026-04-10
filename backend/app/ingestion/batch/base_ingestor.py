@@ -6,13 +6,13 @@ from typing import Any, Dict, Optional
 
 import requests
 
-from backend.app.config.logging_config import get_logger
-from backend.app.config.settings import (
+from app.config.logging_config import get_logger
+from app.config.settings import (
     DEFAULT_REQUEST_TIMEOUT_SECONDS,
     DEFAULT_RETRY_BACKOFF_SECONDS,
     DEFAULT_RETRY_COUNT,
 )
-from backend.app.utils.retry import retry
+from app.utils.retry import retry
 
 
 class BaseIngestor(ABC):
