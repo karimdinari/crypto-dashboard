@@ -88,6 +88,7 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
 
     out["ingestion_time"] = pd.to_datetime(df["ingestion_time"], utc=True, errors="coerce")
 
+
     return out
 
 
