@@ -1,0 +1,15 @@
+# Batch ingestion + bronze lakehouse (imports used under app/)
+pandas>=2.2,<3
+requests>=2.31,<3
+python-dotenv>=1.0,<2
+python-json-logger>=2.0,<4
+
+# --- Optional / not imported yet (enable when you add code) ---
+# kafka-python>=2.0,<3          # streaming + KAFKA_* in settings.py
+# minio>=7.2,<8                # MINIO_* in settings.py
+# polars>=1.0,<2               # faster frames (not used in current code)
+pyarrow>=15,<20              # parquet / Arrow interop
+# duckdb>=1.0,<2               # local analytics
+# fastapi>=0.115,<1            # API layer
+# uvicorn[standard]>=0.30,<1
+# pytest>=8,<9                # tests

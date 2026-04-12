@@ -59,7 +59,8 @@ EXCHANGERATE_API_KEY = os.getenv("EXCHANGERATE_API_KEY", "")
 PROJECT_ROOT = os.getenv("PROJECT_ROOT", _default_project_root())
 BACKEND_ROOT = os.getenv("BACKEND_ROOT", _default_backend_root())
 # Sample + seed CSVs default to repo-root data/ (e.g. data/seeds/metals). Override with DATA_DIR.
-DATA_DIR = os.getenv("DATA_DIR", os.path.join(PROJECT_ROOT, "data"))
+# DATA_DIR = os.getenv("DATA_DIR", os.path.join(PROJECT_ROOT, "data"))
+DATA_DIR = os.getenv("DATA_DIR", os.path.join(BACKEND_ROOT, "data"))
 SAMPLE_DATA_PATH = os.path.join(DATA_DIR, "sample")
 SEED_DATA_PATH = os.path.join(DATA_DIR, "seeds")
 
