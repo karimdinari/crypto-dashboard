@@ -1,10 +1,10 @@
 """
-Reads Bronze crypto_prices/data.parquet,
+Reads Bronze forex_rates/data.parquet,
 cleans and normalizes it to the unified Silver schema,
-writes Silver crypto_data/data.parquet.
+writes Silver forex_data/data.parquet.
 
 Run from backend/:
-    python -m app.lakehouse.silver.clean_crypto_silver
+    python -m app.etl.silver.clean_forex_silver
 """
 
 from __future__ import annotations
@@ -17,14 +17,14 @@ import pandas as pd
 from app.config.logging_config import get_logger
 from app.config.settings import BRONZE_PATH, SILVER_PATH
 
-logger = get_logger("clean_crypto_silver")
+logger = get_logger("clean_forex_silver")
 
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
 
-BRONZE_FILE = Path(BRONZE_PATH) / "crypto_prices" / "data.parquet"
-SILVER_DIR  = Path(SILVER_PATH) / "crypto_data"
+BRONZE_FILE = Path(BRONZE_PATH) / "forex_rates" / "data.parquet"
+SILVER_DIR  = Path(SILVER_PATH) / "forex_data"
 SILVER_FILE = SILVER_DIR / "data.parquet"
 
 # ---------------------------------------------------------------------------
@@ -53,14 +53,14 @@ SILVER_COLUMNS = [
 
 def _normalize(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Bronze crypto columns:
+    Bronze forex columns:
         symbol, display_symbol, market_type, source,
-        price, market_cap, total_volume, ingestion_time
+        base_currency, quote_currency, exchange_rate, ingestion_time
 
     Silver mapping:
-        price        -> close (spot tick so open/high/low = close)
-        total_volume -> volume
-        ingestion_time -> timestamp  (no historical bars from /simple/price)
+        exchange_rate -> close (spot rate so open/high/low = close)
+        volume        -> None  (forex has no volume)
+        ingestion_time -> timestamp
     """
     out = pd.DataFrame()
 
@@ -69,14 +69,13 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
     out["market_type"]    = df["market_type"].astype(str).str.strip()
     out["source"]         = df["source"].astype(str).str.strip()
 
-    price        = pd.to_numeric(df["price"], errors="coerce")
-    out["close"] = price
-    out["open"]  = price
-    out["high"]  = price
-    out["low"]   = price
+    rate         = pd.to_numeric(df["exchange_rate"], errors="coerce")
+    out["close"] = rate
+    out["open"]  = rate
+    out["high"]  = rate
+    out["low"]   = rate
 
-    vol_col       = "total_volume" if "total_volume" in df.columns else None
-    out["volume"] = pd.to_numeric(df[vol_col], errors="coerce") if vol_col else pd.NA
+    out["volume"] = pd.NA  # forex has no volume
 
     out["timestamp"]      = pd.to_datetime(df["ingestion_time"], utc=True, errors="coerce")
     out["ingestion_time"] = pd.to_datetime(df["ingestion_time"], utc=True, errors="coerce")
@@ -96,10 +95,10 @@ def _clean(df: pd.DataFrame) -> pd.DataFrame:
     df = df.drop_duplicates()
     df = df.sort_values("timestamp").reset_index(drop=True)
 
-    for col in ["open", "high", "low", "close", "volume"]:
+    for col in ["open", "high", "low", "close"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    logger.info("Crypto clean", extra={"before": before, "after": len(df)})
+    logger.info("Forex clean", extra={"before": before, "after": len(df)})
     return df
 
 
@@ -110,24 +109,24 @@ def _clean(df: pd.DataFrame) -> pd.DataFrame:
 def _write(df: pd.DataFrame) -> None:
     SILVER_DIR.mkdir(parents=True, exist_ok=True)
     df.to_parquet(SILVER_FILE, index=False)
-    logger.info("Silver crypto written", extra={"rows": len(df), "path": str(SILVER_FILE)})
+    logger.info("Silver forex written", extra={"rows": len(df), "path": str(SILVER_FILE)})
 
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
-def run_clean_crypto_silver(*, write_silver: bool = True) -> pd.DataFrame:
-    logger.info("Starting crypto Silver cleaning")
+def run_clean_forex_silver(*, write_silver: bool = True) -> pd.DataFrame:
+    logger.info("Starting forex Silver cleaning")
 
     if not BRONZE_FILE.exists():
         raise FileNotFoundError(
-            f"Bronze crypto file not found: {BRONZE_FILE}\n"
+            f"Bronze forex file not found: {BRONZE_FILE}\n"
             "Run ingestion first: python -m app.ingestion.batch.run_batch_ingestion"
         )
 
     raw = pd.read_parquet(BRONZE_FILE)
-    logger.info("Bronze crypto read", extra={"rows": len(raw)})
+    logger.info("Bronze forex read", extra={"rows": len(raw)})
 
     silver_time = datetime.now(timezone.utc).isoformat()
 
@@ -147,9 +146,9 @@ def run_clean_crypto_silver(*, write_silver: bool = True) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    df = run_clean_crypto_silver()
+    df = run_clean_forex_silver()
 
-    print("\n✅ Silver crypto_data written")
+    print("\n✅ Silver forex_data written")
     print(f"   Rows   : {len(df)}")
     print(f"   Path   : {SILVER_FILE}\n")
     pd.set_option("display.max_columns", None)

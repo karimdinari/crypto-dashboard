@@ -7,7 +7,7 @@ from app.ingestion.batch.exchangerate_ingestor import ExchangeRateIngestor
 from app.ingestion.batch.metals_csv_ingestor import MetalsCsvIngestor
 from app.ingestion.batch.finnhub_news_ingestor import FinnhubNewsIngestor
 
-from app.lakehouse.bronze.write_bronze import write_bronze_table
+from app.etl.bronze.write_bronze import write_bronze_table
 
 
 logger = get_logger(__name__)

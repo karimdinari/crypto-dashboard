@@ -27,7 +27,7 @@ from app.config.settings import (
 )
 from app.config.assets import NEWS_TARGETS
 from app.ingestion.batch.base_ingestor import BaseIngestor
-from app.lakehouse.bronze.write_bronze import write_bronze_table
+from app.etl.bronze.write_bronze import write_bronze_table
 
 logger = get_logger(__name__)
 

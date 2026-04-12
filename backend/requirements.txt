@@ -1,4 +1,4 @@
-# Batch ingestion + bronze lakehouse (imports used under app/)
+# Batch ingestion + bronze ETL (imports used under app/)
 pandas>=2.2,<3
 requests>=2.31,<3
 python-dotenv>=1.0,<2
