@@ -7,7 +7,7 @@ from app.config.logging_config import get_logger
 from app.config.settings import SEED_DATA_PATH
 from app.config.assets import METALS_ASSETS
 from app.ingestion.batch.base_ingestor import BaseIngestor
-from app.lakehouse.bronze.write_bronze import write_bronze_table
+from app.etl.bronze.write_bronze import write_bronze_table
 
 logger = get_logger(__name__)
 

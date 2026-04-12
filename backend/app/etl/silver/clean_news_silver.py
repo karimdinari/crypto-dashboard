@@ -2,14 +2,15 @@ import pandas as pd
 from pathlib import Path
 
 from app.config.logging_config import get_logger
-from app.lakehouse.silver.schema_silver import SILVER_NEWS_COLUMNS
+from app.config.settings import BRONZE_PATH, SILVER_PATH
+from app.etl.silver.schema_silver import SILVER_NEWS_COLUMNS
 
 logger = get_logger(__name__)
 
-BRONZE_NEWS_PATH = "lakehouse/bronze/news/data.parquet"
+BRONZE_NEWS_PATH = Path(BRONZE_PATH) / "news" / "data.parquet"
 
-SILVER_NEWS_DIR = "lakehouse/silver/news_data"
-SILVER_NEWS_FILE = "lakehouse/silver/news_data/data.parquet"
+SILVER_NEWS_DIR = Path(SILVER_PATH) / "news_data"
+SILVER_NEWS_FILE = SILVER_NEWS_DIR / "data.parquet"
 
 
 def clean_news():
@@ -48,8 +49,7 @@ def clean_news():
     # reset index
     df = df.reset_index(drop=True)
 
-    output_dir = Path(SILVER_NEWS_DIR)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    SILVER_NEWS_DIR.mkdir(parents=True, exist_ok=True)
 
     df.to_parquet(SILVER_NEWS_FILE, index=False)
 

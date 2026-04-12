@@ -27,7 +27,7 @@ def _default_project_root() -> str:
 
 
 def _default_backend_root() -> str:
-    """Directory that contains ``app/`` and typically ``data/`` and ``lakehouse/``."""
+    """Directory that contains ``app/`` and typically ``data/`` and on-disk Parquet under ``lakehouse/``."""
     # backend/app/config/settings.py -> parents[2] == backend/
     return str(Path(__file__).resolve().parents[2])
 
