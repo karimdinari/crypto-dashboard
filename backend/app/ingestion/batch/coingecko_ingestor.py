@@ -6,7 +6,7 @@ Automatically writes to Bronze layer.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from typing import Optional
 
 import pandas as pd
@@ -141,13 +141,13 @@ class CoinGeckoIngestor(BaseIngestor):
                     for i, price_entry in enumerate(prices):
                         timestamp_ms = price_entry[0]
                         price = price_entry[1]
-                        
-                        dt = datetime.fromtimestamp(timestamp_ms / 1000)
+                        timestamp = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc).isoformat()
 
                         record = {
                             "symbol": symbol,
                             "display_symbol": asset["display_symbol"],
                             "market_type": "crypto",
+                            "timestamp": timestamp,
                             "source": self.source_name,
                             "price": price,
                             "market_cap": market_caps[i][1] if i < len(market_caps) else None,
