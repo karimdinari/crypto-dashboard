@@ -4,7 +4,7 @@ cleans and normalizes it to the unified Silver schema,
 writes Silver metals_data/data.parquet.
 
 Run from backend/:
-    python -m app.lakehouse.silver.clean_metals_silver
+    python -m app.etl.silver.clean_metals_silver
 """
 
 from __future__ import annotations

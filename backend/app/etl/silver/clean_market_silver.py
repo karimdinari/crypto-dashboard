@@ -4,18 +4,18 @@ Merged market Silver table only (writes ``silver/market_data/data.parquet``).
 Does not write per-asset folders (``crypto_data``, ``forex_data``, ``metals_data``).
 
 Run from backend/:
-    python -m app.lakehouse.silver.clean_market_silver
+    python -m app.etl.silver.clean_market_silver
 """
 import pandas as pd
 from pathlib import Path
 
 from app.config.logging_config import get_logger
 from app.config.settings import SILVER_PATH
-from app.lakehouse.silver.schema_silver import SILVER_MARKET_COLUMNS
+from app.etl.silver.schema_silver import SILVER_MARKET_COLUMNS
 
-from app.lakehouse.silver.clean_crypto_silver import run_clean_crypto_silver
-from app.lakehouse.silver.clean_forex_silver import run_clean_forex_silver
-from app.lakehouse.silver.clean_metals_silver import run_clean_metals_silver
+from app.etl.silver.clean_crypto_silver import run_clean_crypto_silver
+from app.etl.silver.clean_forex_silver import run_clean_forex_silver
+from app.etl.silver.clean_metals_silver import run_clean_metals_silver
 
 logger = get_logger(__name__)
 

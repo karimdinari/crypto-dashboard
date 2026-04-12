@@ -1,5 +1,5 @@
 """
-Silver layer data viewer (Parquet under lakehouse/silver/).
+Silver layer data viewer (Parquet under SILVER_PATH, default backend/lakehouse/silver/).
 
 Run from backend/:
     python view_silver_data.py
@@ -56,7 +56,7 @@ def view_market_data(base: Path) -> pd.DataFrame | None:
     if df is None:
         print(
             f"{Colors.WARNING}No file: {path}{Colors.ENDC}\n"
-            "  Run: python -m app.lakehouse.silver.clean_market_silver"
+            "  Run: python -m app.etl.silver.clean_market_silver"
         )
         return None
 
@@ -98,7 +98,7 @@ def view_news_data(base: Path) -> pd.DataFrame | None:
     if df is None:
         print(
             f"{Colors.WARNING}No file: {path}{Colors.ENDC}\n"
-            "  Run: python -m app.lakehouse.silver.clean_news_silver"
+            "  Run: python -m app.etl.silver.clean_news_silver"
         )
         return None
 
@@ -217,7 +217,7 @@ def main() -> None:
         print(
             f"{Colors.FAIL}Silver directory not found: {base}{Colors.ENDC}\n"
             "Create it by running silver cleaners, e.g.\n"
-            "  python -m app.lakehouse.silver.clean_market_silver"
+            "  python -m app.etl.silver.clean_market_silver"
         )
         sys.exit(1)
 
