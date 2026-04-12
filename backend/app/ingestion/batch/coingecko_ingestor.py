@@ -14,7 +14,7 @@ import pandas as pd
 from app.config.assets import CRYPTO_ASSETS
 from app.config.settings import COINGECKO_BASE_URL
 from app.ingestion.batch.base_ingestor import BaseIngestor
-from app.lakehouse.bronze.write_bronze import write_bronze_table  # ✅ ADDED
+from app.etl.bronze.write_bronze import write_bronze_table  # ✅ ADDED
 
 
 class CoinGeckoIngestor(BaseIngestor):
