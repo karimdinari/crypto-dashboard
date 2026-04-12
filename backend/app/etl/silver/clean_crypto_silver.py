@@ -60,7 +60,8 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
     Silver mapping:
         price        -> close (spot tick so open/high/low = close)
         total_volume -> volume
-        ingestion_time -> timestamp  (no historical bars from /simple/price)
+        timestamp    -> timestamp (historical bars)
+        ingestion_time -> fallback timestamp when timestamp is absent
     """
     out = pd.DataFrame()
 
@@ -78,7 +79,13 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
     vol_col       = "total_volume" if "total_volume" in df.columns else None
     out["volume"] = pd.to_numeric(df[vol_col], errors="coerce") if vol_col else pd.NA
 
-    out["timestamp"]      = pd.to_datetime(df["ingestion_time"], utc=True, errors="coerce")
+    if "timestamp" in df.columns:
+        parsed_timestamp = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+        fallback_timestamp = pd.to_datetime(df["ingestion_time"], utc=True, errors="coerce")
+        out["timestamp"] = parsed_timestamp.fillna(fallback_timestamp)
+    else:
+        out["timestamp"] = pd.to_datetime(df["ingestion_time"], utc=True, errors="coerce")
+
     out["ingestion_time"] = pd.to_datetime(df["ingestion_time"], utc=True, errors="coerce")
 
     return out
