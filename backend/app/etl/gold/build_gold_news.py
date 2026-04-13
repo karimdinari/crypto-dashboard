@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 
 from app.config.logging_config import get_logger
-from app.etl.schema_gold import GOLD_NEWS_AGGREGATES_COLUMNS
+from app.etl.gold.schema_gold import GOLD_NEWS_AGGREGATES_COLUMNS
 
 logger = get_logger(__name__)
 
