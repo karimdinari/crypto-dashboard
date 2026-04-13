@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pandas as pd
 import numpy as np
-from app.config.logging_config import get_logger
+from backend.app.config.logging_config import get_logger
 
 logger = get_logger(__name__)
 
