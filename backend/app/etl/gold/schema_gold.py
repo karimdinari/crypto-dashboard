@@ -48,5 +48,17 @@ GOLD_MARKET_FEATURES_COLUMNS = [
     "source",
     "ingestion_time",
 ]
+GOLD_CORRELATION_COLUMNS = [
+    "symbol_1",
+    "symbol_2",
+    "correlation_value",
+]
+GOLD_NEWS_AGGREGATES_COLUMNS = [
+    "symbol",
+    "display_symbol",
+    "market_type",
+    "date",
+    "news_count",
+]
 
 # Total: 25 columns (11 original + 14 features)
