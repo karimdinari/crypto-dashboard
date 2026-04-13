@@ -60,7 +60,8 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
     Silver mapping:
         exchange_rate -> close (spot rate so open/high/low = close)
         volume        -> None  (forex has no volume)
-        ingestion_time -> timestamp
+        timestamp     -> timestamp (historical bars)
+        ingestion_time -> fallback timestamp when timestamp is absent
     """
     out = pd.DataFrame()
 
@@ -77,7 +78,13 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
 
     out["volume"] = pd.NA  # forex has no volume
 
-    out["timestamp"]      = pd.to_datetime(df["ingestion_time"], utc=True, errors="coerce")
+    if "timestamp" in df.columns:
+        parsed_timestamp = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+        fallback_timestamp = pd.to_datetime(df["ingestion_time"], utc=True, errors="coerce")
+        out["timestamp"] = parsed_timestamp.fillna(fallback_timestamp)
+    else:
+        out["timestamp"] = pd.to_datetime(df["ingestion_time"], utc=True, errors="coerce")
+
     out["ingestion_time"] = pd.to_datetime(df["ingestion_time"], utc=True, errors="coerce")
 
     return out
