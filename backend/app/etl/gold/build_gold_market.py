@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 
 from app.config.logging_config import get_logger
-from app.etl.schema_gold import (
+from app.etl.gold.schema_gold import (
     GOLD_MARKET_FEATURES_COLUMNS,
     GOLD_CORRELATION_COLUMNS,
 )
@@ -22,7 +22,6 @@ GOLD_CORR_FILE = "lakehouse/gold/correlation_matrix/data.parquet"
 
 def build_gold_market():
     logger.info("Reading Silver market dataset")
-
     silver_df = pd.read_parquet(SILVER_MARKET_PATH)
 
     logger.info("Building market features")
@@ -35,7 +34,7 @@ def build_gold_market():
     )
 
     features_df = features_df.dropna(subset=["symbol", "timestamp", "close"])
-    features_df = features_df.sort_values("timestamp").reset_index(drop=True)
+    features_df = features_df.sort_values(["symbol", "timestamp"]).reset_index(drop=True)
 
     features_df = features_df[GOLD_MARKET_FEATURES_COLUMNS]
 
@@ -45,8 +44,8 @@ def build_gold_market():
 
     logger.info(f"Gold market features written to {GOLD_MARKET_FILE}")
 
-    logger.info("Building correlation matrix")
-    corr_df = build_correlation_matrix(features_df)
+    logger.info("Building correlation matrix from Silver market data")
+    corr_df = build_correlation_matrix(silver_df)
     corr_df = corr_df[GOLD_CORRELATION_COLUMNS]
 
     corr_output_dir = Path(GOLD_CORR_DIR)
@@ -59,4 +58,10 @@ def build_gold_market():
 
 
 if __name__ == "__main__":
-    build_gold_market()
+    features_df, corr_df = build_gold_market()
+
+    print("Gold market features preview:")
+    print(features_df.head(10).to_string(index=False))
+
+    print("\nGold correlation matrix preview:")
+    print(corr_df.head(20).to_string(index=False))
