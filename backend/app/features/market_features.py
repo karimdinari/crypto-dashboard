@@ -1,10 +1,7 @@
 """
-Main market feature builder.
-Combines all feature engineering steps into one function.
-Outputs schema-compliant Gold market features.
+Simple market feature builder.
+Builds 12 core + advanced features for Phase 4.
 """
-
-from __future__ import annotations
 
 import pandas as pd
 from pathlib import Path
@@ -12,35 +9,9 @@ from typing import Optional
 
 from app.config.logging_config import get_logger
 from app.config.settings import SILVER_PATH
-
-from app.features.indicators import calculate_all_indicators
-from app.features.volatility import calculate_volatility
+from app.features.simple_features import add_all_features
 
 logger = get_logger(__name__)
-
-# Import Gold schema for validation
-try:
-    from app.etl.schema_gold import GOLD_MARKET_FEATURES_COLUMNS
-except ImportError:
-    # Fallback if schema_gold.py is in different location
-    GOLD_MARKET_FEATURES_COLUMNS = [
-        "symbol",
-        "display_symbol",
-        "market_type",
-        "timestamp",
-        "open",
-        "high",
-        "low",
-        "close",
-        "volume",
-        "returns",
-        "price_diff",
-        "ma7",
-        "ma30",
-        "volatility",
-        "source",
-        "ingestion_time",
-    ]
 
 
 def build_market_features(
@@ -48,27 +19,34 @@ def build_market_features(
     silver_path: Optional[str] = None
 ) -> pd.DataFrame:
     """
-    Build complete market feature dataset from Silver market data.
+    Build Gold market features from Silver data.
     
-    This is the main function Person 1 provides to Person 2.
+    Features created (12 total):
     
-    Steps:
-    1. Load Silver market data (if not provided)
-    2. Calculate returns
-    3. Calculate price differences
-    4. Calculate MA7 and MA30
-    5. Calculate volatility
-    6. Ensure output matches Gold schema
-    7. Return enriched DataFrame
+    CORE (7):
+        1. returns - % price change
+        2. price_diff - absolute price change
+        3. ma7 - 7-day moving average
+        4. ma30 - 30-day moving average
+        5. volatility - rolling std
+        6. volume_change - volume difference
+        7. correlation - correlation with BTC
+    
+    ADVANCED (5):
+        8. rsi - overbought/oversold (0-100)
+        9. macd - momentum (+ signal + histogram = 3 columns)
+        10. day_of_week - temporal patterns (0-6)
+        11. volume_ma7 - 7-day volume average
+        12. relative_volume - volume vs average
     
     Args:
         df: Optional DataFrame (if already loaded)
-        silver_path: Optional path to Silver market data
+        silver_path: Optional path to Silver data
         
     Returns:
-        DataFrame with all market features, matching GOLD_MARKET_FEATURES_COLUMNS schema
+        DataFrame with all features
     """
-    # Load data if not provided
+    # Load data
     if df is None:
         if silver_path is None:
             silver_path = Path(SILVER_PATH) / "market_data" / "data.parquet"
@@ -76,115 +54,62 @@ def build_market_features(
         logger.info(f"Loading Silver market data from {silver_path}")
         df = pd.read_parquet(silver_path)
     
-    logger.info(
-        "Building market features",
-        extra={"input_rows": len(df), "input_cols": len(df.columns)}
-    )
+    initial_cols = len(df.columns)
+    logger.info(f"Starting feature engineering: {len(df)} rows, {initial_cols} columns")
     
     # Ensure timestamp is datetime
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     
-    # Sort by symbol and timestamp
+    # Sort data
     df = df.sort_values(['symbol', 'timestamp']).reset_index(drop=True)
     
-    # Calculate all indicators
-    df = calculate_all_indicators(df)
+    # Add all features
+    df = add_all_features(df)
     
-    # Calculate volatility (needs returns first)
-    df = calculate_volatility(df, column="returns", window=7, output_name="volatility")
+    # Fill NaN
+    df = df.ffill().fillna(0)
     
-    # Fill NaN values for first rows (where rolling windows don't have enough data)
-    # Forward fill is common for time series
-    df = df.fillna(method='ffill')
+    # Replace inf
+    df = df.replace([float('inf'), float('-inf')], 0)
     
-    # If still NaN (first row), fill with 0
-    df = df.fillna(0)
-    
-    # ✅ ENSURE OUTPUT MATCHES GOLD SCHEMA
-    # Select only the columns defined in schema_gold.py
-    missing_cols = set(GOLD_MARKET_FEATURES_COLUMNS) - set(df.columns)
-    if missing_cols:
-        logger.warning(f"Missing columns in output: {missing_cols}")
-        # Add missing columns with None/0
-        for col in missing_cols:
-            df[col] = None
-    
-    # Select columns in the exact order from schema
-    df = df[GOLD_MARKET_FEATURES_COLUMNS]
+    new_features = len(df.columns) - initial_cols
     
     logger.info(
-        "Market features built successfully",
-        extra={
-            "output_rows": len(df),
-            "output_cols": len(df.columns),
-            "new_features": ["returns", "price_diff", "ma7", "ma30", "volatility"],
-            "schema_compliant": True
-        }
+        f"Feature engineering complete: {len(df)} rows, {len(df.columns)} columns, {new_features} new features"
     )
     
     return df
 
 
-def validate_schema(df: pd.DataFrame) -> tuple[bool, list[str]]:
-    """
-    Validate that output DataFrame matches Gold market features schema.
-    
-    Args:
-        df: DataFrame to validate
-        
-    Returns:
-        (is_valid, missing_or_extra_columns)
-    """
-    df_cols = set(df.columns)
-    schema_cols = set(GOLD_MARKET_FEATURES_COLUMNS)
-    
-    missing = schema_cols - df_cols
-    extra = df_cols - schema_cols
-    
-    issues = []
-    if missing:
-        issues.append(f"Missing: {missing}")
-    if extra:
-        issues.append(f"Extra: {extra}")
-    
-    is_valid = len(issues) == 0
-    
-    return is_valid, issues
-
-
 if __name__ == "__main__":
-    # Test the complete feature builder
-    print("\n" + "="*60)
-    print("Testing Market Feature Builder (Gold Schema Compliant)")
-    print("="*60 + "\n")
+    """Test feature builder"""
     
+    print("\n" + "="*70)
+    print("FEATURE BUILDER TEST (12 Features)")
+    print("="*70)
+    
+    # Build features
     df = build_market_features()
     
-    print(f"✅ Market features built")
-    print(f"Total rows: {len(df)}")
-    print(f"Total columns: {len(df.columns)}")
+    print(f"\n✅ Features built:")
+    print(f"   Total rows: {len(df)}")
+    print(f"   Total columns: {len(df.columns)}")
     
-    # Validate schema compliance
-    is_valid, issues = validate_schema(df)
+    # List all features
+    original = ['symbol', 'display_symbol', 'market_type', 'timestamp', 'open', 'high', 'low', 'close', 'volume', 'source', 'ingestion_time']
+    new_features = [col for col in df.columns if col not in original]
     
-    if is_valid:
-        print(f"\n✅ Schema validation: PASSED")
-    else:
-        print(f"\n⚠️ Schema validation: ISSUES FOUND")
-        for issue in issues:
-            print(f"   - {issue}")
+    print(f"\n🔥 NEW FEATURES ({len(new_features)}):")
+    for i, feat in enumerate(sorted(new_features), 1):
+        print(f"   {i:2d}. {feat}")
     
-    print(f"\nColumns (in schema order):")
-    for i, col in enumerate(df.columns, 1):
-        print(f"   {i:2d}. {col}")
+    # Show sample
+    print(f"\n📈 Sample data (Bitcoin, last 3 rows):")
+    btc = df[df['symbol'] == 'bitcoin'].tail(3)
     
-    print(f"\n📊 Sample data (Bitcoin):")
-    btc = df[df['symbol'] == 'bitcoin'].head(5)
-    display_cols = ['timestamp', 'close', 'returns', 'price_diff', 'ma7', 'ma30', 'volatility']
-    print(btc[display_cols].to_string(index=False))
+    sample_cols = ['timestamp', 'close', 'returns', 'ma7', 'rsi', 'macd', 'relative_volume', 'day_of_week']
+    print(btc[sample_cols].to_string(index=False))
     
-    print(f"\n📊 Sample data (EUR/USD):")
-    eur = df[df['symbol'] == 'EURUSD'].head(5)
-    print(eur[display_cols].to_string(index=False))
-    
-    print(f"\n✅ Feature engineering complete and schema-compliant!")
+    print("\n" + "="*70)
+    print("✅ FEATURE BUILDER WORKS!")
+    print("="*70 + "\n")
