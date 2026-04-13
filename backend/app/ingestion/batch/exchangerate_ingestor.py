@@ -6,7 +6,7 @@ Automatically writes to Bronze layer.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import pandas as pd
@@ -20,7 +20,7 @@ from app.etl.bronze.write_bronze import write_bronze_table  # ✅ ADDED
 class ExchangeRateIngestor(BaseIngestor):
     """Ingestor for Frankfurter forex rates with historical data support"""
 
-    def __init__(self, days: int = 30) -> None:
+    def __init__(self, days: int = 30*12) -> None:
         """
         Initialize ExchangeRate ingestor.
         
@@ -138,6 +138,7 @@ class ExchangeRateIngestor(BaseIngestor):
                     for date_str, rate_data in rates_by_date.items():
                         if quote in rate_data:
                             rate = rate_data[quote]
+                            timestamp = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc).isoformat()
 
                             record = {
                                 "symbol": symbol,
@@ -146,6 +147,7 @@ class ExchangeRateIngestor(BaseIngestor):
                                 "source": "frankfurter",
                                 "base_currency": base,
                                 "quote_currency": quote,
+                                "timestamp": timestamp,
                                 "exchange_rate": rate,
                                 "ingestion_time": ingestion_time,
                             }
