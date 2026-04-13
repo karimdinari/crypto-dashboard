@@ -58,12 +58,6 @@ MAX_RECONNECT_ATTEMPTS = 0
 # ---------------------------------------------------------------------------
 
 def _build_stream_url(symbols: list[str]) -> str:
-    """
-    Build a combined Binance stream URL for multiple symbols.
-
-    Example:
-        wss://stream.binance.com:9443/ws/btcusdt@trade/ethusdt@trade
-    """
     streams = []
     for sym in symbols:
         binance_sym = SYMBOL_MAP.get(sym)
@@ -75,13 +69,14 @@ def _build_stream_url(symbols: list[str]) -> str:
     if not streams:
         raise ValueError("No valid Binance symbols found in STREAM_SYMBOLS")
 
-    # Combined stream uses /stream?streams= for multiple
     if len(streams) == 1:
+        # single stream: wss://stream.binance.com:9443/ws/btcusdt@trade
         return f"{BINANCE_WS_BASE_URL}/{streams[0]}"
 
+    # combined stream: wss://stream.binance.com:9443/stream?streams=btcusdt@trade/ethusdt@trade
     combined = "/".join(streams)
-    return f"{BINANCE_WS_BASE_URL}/stream?streams={combined}"
-
+    base = BINANCE_WS_BASE_URL.replace("/ws", "")
+    return f"{base}/stream?streams={combined}"
 
 def _parse_trade(raw: dict[str, Any]) -> dict[str, Any] | None:
     """
