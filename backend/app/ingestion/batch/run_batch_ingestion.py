@@ -3,7 +3,7 @@ import pandas as pd
 from app.config.logging_config import get_logger
 
 from app.ingestion.batch.coingecko_ingestor import CoinGeckoIngestor
-from app.ingestion.batch.exchangerate_ingestor import ExchangeRateIngestor
+from app.ingestion.batch.frankfurter_ingestor import FrankfurterIngestor
 from app.ingestion.batch.metals_csv_ingestor import MetalsCsvIngestor
 from app.ingestion.batch.finnhub_news_ingestor import FinnhubNewsIngestor
 
@@ -31,7 +31,7 @@ def run_crypto():
 def run_forex():
     logger.info("Starting forex ingestion")
 
-    ingestor = ExchangeRateIngestor()
+    ingestor = FrankfurterIngestor()
     df = ingestor.fetch()
 
     write_bronze_table(
