@@ -70,6 +70,10 @@ STREAM_BRONZE_DIR = Path(BRONZE_PATH) / "stream_ticks"
 # ---------------------------------------------------------------------------
 # Schema
 # ---------------------------------------------------------------------------
+# ``timestamp``, ``ingestion_time``, and ``consumed_at`` are normalised to
+# UTC in memory, then written to Parquet as ISO 8601 strings ending in ``Z``
+# (see ``_df_for_parquet_write``) so spreadsheets and Parquet viewers do not
+# reinterpret ``datetime64[ns, UTC]`` as local time.
 
 STREAM_TICK_COLUMNS: list[str] = [
     "symbol",
@@ -109,6 +113,24 @@ def _safe_float(value: Any, default: float) -> float:
         return result if result > 0 else default
     except (TypeError, ValueError):
         return default
+
+
+def _utc_isoformat(ts: Any) -> str:
+    """
+    Single canonical UTC instant as ISO 8601 with a Z suffix.
+
+    All stream timestamps are stored this way so they match global trading
+    practice (UTC) and cannot be mistaken for a local offset.
+    """
+    t = pd.to_datetime(ts, utc=True, errors="coerce")
+    if pd.isna(t):
+        t = pd.Timestamp.now(tz="UTC")
+    else:
+        t = t.tz_convert("UTC")
+    s = t.isoformat(timespec="milliseconds")
+    if s.endswith("+00:00"):
+        return s[:-6] + "Z"
+    return s
 
 
 def _normalise_tick(raw: dict[str, Any]) -> dict[str, Any] | None:
@@ -198,6 +220,17 @@ def _normalise_tick(raw: dict[str, Any]) -> dict[str, Any] | None:
     # ── display_symbol ───────────────────────────────────────────────────────
     display_symbol = raw.get("display_symbol") or symbol
 
+    ing_raw = raw.get("ingestion_time")
+    if ing_raw not in (None, ""):
+        try:
+            ingestion_time = _utc_isoformat(
+                pd.to_datetime(ing_raw, utc=True, errors="raise"),
+            )
+        except Exception:
+            ingestion_time = ""
+    else:
+        ingestion_time = ""
+
     return {
         "symbol":         str(symbol).strip(),
         "display_symbol": str(display_symbol).strip(),
@@ -208,9 +241,9 @@ def _normalise_tick(raw: dict[str, Any]) -> dict[str, Any] | None:
         "low":            low,
         "close":          close,
         "volume":         volume,
-        "timestamp":      timestamp.isoformat(),
-        "ingestion_time": str(raw.get("ingestion_time", "")),
-        "consumed_at":    datetime.now(timezone.utc).isoformat(),
+        "timestamp":      _utc_isoformat(timestamp),
+        "ingestion_time": ingestion_time,
+        "consumed_at":    _utc_isoformat(datetime.now(timezone.utc)),
     }
 
 
@@ -237,6 +270,21 @@ def _enforce_schema(df: pd.DataFrame) -> pd.DataFrame:
         df[col] = pd.to_datetime(df[col], utc=True, errors="coerce")
 
     return df
+
+
+def _df_for_parquet_write(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Parquet viewers and Excel often display ``datetime64[ns, UTC]`` in the
+    machine's local timezone (+01 in much of Europe). Writing the same instants
+    as ISO 8601 strings with a ``Z`` suffix keeps the on-disk values visibly UTC.
+    """
+    out = df.copy()
+    for col in DATETIME_COLUMNS:
+        out[col] = [
+            _utc_isoformat(v) if pd.notna(v) else pd.NA
+            for v in out[col]
+        ]
+    return out
 
 
 def _build_df(batch: list[dict[str, Any]]) -> pd.DataFrame:
@@ -329,7 +377,7 @@ def _flush_to_bronze(batch: list[dict[str, Any]]) -> int:
 
     # ── atomic write ──────────────────────────────────────────────────────
     try:
-        combined_df.to_parquet(tmp_file, index=False)
+        _df_for_parquet_write(combined_df).to_parquet(tmp_file, index=False)
         tmp_file.replace(out_file)          # atomic on same filesystem
     except Exception as exc:
         logger.error(
