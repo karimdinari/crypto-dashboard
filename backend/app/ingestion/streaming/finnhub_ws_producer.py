@@ -52,7 +52,7 @@ def publish_event(event: dict) -> None:
     """
     payload = json.dumps(event)
     producer.send(TOPIC_MARKET_STREAM, value=payload, key=event["symbol"])
-    producer.flush()
+    # producer.flush()
 
 
 def on_open(ws) -> None:

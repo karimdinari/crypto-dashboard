@@ -7,6 +7,7 @@ python-json-logger>=2.0,<4
 # --- Streaming (Binance WS → Kafka) ---
 kafka-python>=2.0,<3
 websocket-client>=1.7,<2
+yfinance>=0.2.40,<1
 
 # --- Optional / not imported yet (enable when you add code) ---
 # minio>=7.2,<8                # MINIO_* in settings.py
