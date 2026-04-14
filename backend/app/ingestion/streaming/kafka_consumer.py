@@ -272,6 +272,21 @@ def _enforce_schema(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _df_for_parquet_write(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Parquet viewers and Excel often display ``datetime64[ns, UTC]`` in the
+    machine's local timezone (+01 in much of Europe). Writing the same instants
+    as ISO 8601 strings with a ``Z`` suffix keeps the on-disk values visibly UTC.
+    """
+    out = df.copy()
+    for col in DATETIME_COLUMNS:
+        out[col] = [
+            _utc_isoformat(v) if pd.notna(v) else pd.NA
+            for v in out[col]
+        ]
+    return out
+
+
 def _build_df(batch: list[dict[str, Any]]) -> pd.DataFrame:
     """Build a typed, schema-enforced DataFrame from a list of tick dicts."""
     return _enforce_schema(pd.DataFrame(batch))
@@ -362,7 +377,7 @@ def _flush_to_bronze(batch: list[dict[str, Any]]) -> int:
 
     # ── atomic write ──────────────────────────────────────────────────────
     try:
-        combined_df.to_parquet(tmp_file, index=False)
+        _df_for_parquet_write(combined_df).to_parquet(tmp_file, index=False)
         tmp_file.replace(out_file)          # atomic on same filesystem
     except Exception as exc:
         logger.error(
