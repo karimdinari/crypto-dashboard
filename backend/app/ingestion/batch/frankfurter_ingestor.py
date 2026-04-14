@@ -17,12 +17,12 @@ from app.ingestion.batch.base_ingestor import BaseIngestor
 from app.etl.bronze.write_bronze import write_bronze_table  # ✅ ADDED
 
 
-class ExchangeRateIngestor(BaseIngestor):
+class FrankfurterIngestor(BaseIngestor):
     """Ingestor for Frankfurter forex rates with historical data support"""
 
     def __init__(self, days: int = 30*12) -> None:
         """
-        Initialize ExchangeRate ingestor.
+        Initialize Frankfurter ingestor.
         
         Args:
             days: Number of days of historical data to fetch (default: 30)
@@ -258,7 +258,7 @@ def ingest_exchangerate(days: int = 30, historical: bool = True, write_to_bronze
     Returns:
         DataFrame with forex rate data
     """
-    ingestor = ExchangeRateIngestor(days=days)
+    ingestor = FrankfurterIngestor(days=days)
     
     if write_to_bronze:
         success = ingestor.ingest_and_write(historical=historical, mode=mode)
@@ -275,7 +275,7 @@ if __name__ == "__main__":
     print("Frankfurter Historical Ingestion → Bronze Layer")
     print("="*60 + "\n")
     
-    ingestor = ExchangeRateIngestor(days=30)
+    ingestor = FrankfurterIngestor(days=30)
     success = ingestor.ingest_and_write(historical=True, mode="overwrite")
 
     if success:
