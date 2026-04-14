@@ -18,6 +18,8 @@ htmlcov/
 data/
 gold_exports/
 silver_exports/
+gold_exports/
+lakehouse/
 
 *.parquet
 *.delta
