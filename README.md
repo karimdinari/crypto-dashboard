@@ -1,4 +1,3 @@
-
 The best move is:
 
 # Use this architecture as your **backend reference**
@@ -388,7 +387,7 @@ Since frontend is not a problem, your MVP backend should prove:
 ## Batch
 
 * CoinGecko works
-* ExchangeRate works
+* Frankfurter works
 * CSV load works
 * Finnhub news works
 
@@ -453,7 +452,7 @@ You can add it later if time allows.
 ## Adapt to your actual data
 
 * CoinGecko instead of “Stock API”
-* ExchangeRate + metals CSV instead of “Historical stock”
+* Frankfurter + metals CSV instead of “Historical stock”
 * Binance WS for live crypto stream
 * Finnhub news as additional batch source
 
