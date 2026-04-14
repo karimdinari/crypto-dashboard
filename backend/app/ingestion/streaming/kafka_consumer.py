@@ -220,6 +220,17 @@ def _normalise_tick(raw: dict[str, Any]) -> dict[str, Any] | None:
     # ── display_symbol ───────────────────────────────────────────────────────
     display_symbol = raw.get("display_symbol") or symbol
 
+    ing_raw = raw.get("ingestion_time")
+    if ing_raw not in (None, ""):
+        try:
+            ingestion_time = _utc_isoformat(
+                pd.to_datetime(ing_raw, utc=True, errors="raise"),
+            )
+        except Exception:
+            ingestion_time = ""
+    else:
+        ingestion_time = ""
+
     return {
         "symbol":         str(symbol).strip(),
         "display_symbol": str(display_symbol).strip(),
@@ -230,9 +241,9 @@ def _normalise_tick(raw: dict[str, Any]) -> dict[str, Any] | None:
         "low":            low,
         "close":          close,
         "volume":         volume,
-        "timestamp":      timestamp.isoformat(),
-        "ingestion_time": str(raw.get("ingestion_time", "")),
-        "consumed_at":    datetime.now(timezone.utc).isoformat(),
+        "timestamp":      _utc_isoformat(timestamp),
+        "ingestion_time": ingestion_time,
+        "consumed_at":    _utc_isoformat(datetime.now(timezone.utc)),
     }
 
 
