@@ -62,6 +62,7 @@ STREAM_BRONZE_DIR = Path(BRONZE_PATH) / "stream_ticks"
 
 STREAM_TICK_COLUMNS = [
     "symbol",
+    "display_symbol",
     "market_type",
     "source",
     "open",
@@ -87,6 +88,7 @@ KNOWN_SOURCES = {
 
 def _normalise_tick(raw: dict[str, Any]) -> dict[str, Any] | None:
     symbol = raw.get("symbol")
+    display_symbol = raw.get("display_symbol")
     close  = raw.get("close") or raw.get("price")
 
     if not symbol or close is None:
@@ -124,6 +126,7 @@ def _normalise_tick(raw: dict[str, Any]) -> dict[str, Any] | None:
 
     return {
         "symbol":         str(symbol).strip(),
+        "display_symbol": str(display_symbol or symbol).strip(),
         "market_type":    str(raw.get("market_type", "unknown")).strip(),
         "source":         source,
         "open":           open_,
