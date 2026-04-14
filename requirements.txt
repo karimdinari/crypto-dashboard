@@ -4,8 +4,11 @@ requests>=2.31,<3
 python-dotenv>=1.0,<2
 python-json-logger>=2.0,<4
 
+# --- Streaming (Binance WS → Kafka) ---
+kafka-python>=2.0,<3
+websocket-client>=1.7,<2
+
 # --- Optional / not imported yet (enable when you add code) ---
-# kafka-python>=2.0,<3          # streaming + KAFKA_* in settings.py
 # minio>=7.2,<8                # MINIO_* in settings.py
 # polars>=1.0,<2               # faster frames (not used in current code)
 pyarrow>=15,<20              # parquet / Arrow interop

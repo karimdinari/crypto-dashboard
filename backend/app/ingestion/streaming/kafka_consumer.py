@@ -107,7 +107,7 @@ def _normalise_tick(raw: dict[str, Any]) -> dict[str, Any] | None:
     if source not in KNOWN_SOURCES:
         logger.warning("Tick from unknown source — accepting but flagging", extra={"source": source})
 
-    ts_raw = raw.get("timestamp") or raw.get("ingestion_time")
+    ts_raw = raw.get("timestamp") or raw.get("event_time") or raw.get("ingestion_time")
     try:
         timestamp = pd.to_datetime(ts_raw, utc=True, errors="raise")
     except Exception:
