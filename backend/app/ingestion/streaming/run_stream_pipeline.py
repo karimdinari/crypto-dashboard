@@ -79,7 +79,7 @@ def run_pipeline() -> None:
     # 2. Start producers
     start_process("app.ingestion.streaming.binance_ws_producer")
     start_process("app.ingestion.streaming.finnhub_ws_producer")
-    start_process("app.ingestion.streaming.metals_stream_producer")
+    start_process("app.ingestion.streaming.yfinance_metals_producer")
 
     logger.info("All stream processes started successfully")
 
