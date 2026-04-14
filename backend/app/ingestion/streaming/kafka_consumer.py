@@ -70,6 +70,10 @@ STREAM_BRONZE_DIR = Path(BRONZE_PATH) / "stream_ticks"
 # ---------------------------------------------------------------------------
 # Schema
 # ---------------------------------------------------------------------------
+# ``timestamp``, ``ingestion_time``, and ``consumed_at`` are normalised to
+# UTC in memory, then written to Parquet as ISO 8601 strings ending in ``Z``
+# (see ``_df_for_parquet_write``) so spreadsheets and Parquet viewers do not
+# reinterpret ``datetime64[ns, UTC]`` as local time.
 
 STREAM_TICK_COLUMNS: list[str] = [
     "symbol",
@@ -109,6 +113,24 @@ def _safe_float(value: Any, default: float) -> float:
         return result if result > 0 else default
     except (TypeError, ValueError):
         return default
+
+
+def _utc_isoformat(ts: Any) -> str:
+    """
+    Single canonical UTC instant as ISO 8601 with a Z suffix.
+
+    All stream timestamps are stored this way so they match global trading
+    practice (UTC) and cannot be mistaken for a local offset.
+    """
+    t = pd.to_datetime(ts, utc=True, errors="coerce")
+    if pd.isna(t):
+        t = pd.Timestamp.now(tz="UTC")
+    else:
+        t = t.tz_convert("UTC")
+    s = t.isoformat(timespec="milliseconds")
+    if s.endswith("+00:00"):
+        return s[:-6] + "Z"
+    return s
 
 
 def _normalise_tick(raw: dict[str, Any]) -> dict[str, Any] | None:
