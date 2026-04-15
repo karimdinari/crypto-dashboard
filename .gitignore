@@ -23,6 +23,7 @@ data/gold/*.parquet
 # Root (legacy if node_modules left behind)
 /node_modules/
 /dist/
+/data/
 
 # Ignore all virtual environments
 /venv/

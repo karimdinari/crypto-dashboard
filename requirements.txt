@@ -1,5 +1,6 @@
 # Batch ingestion + bronze lakehouse (imports used under app/)
-pandas>=2.2,<3
+# Keep <2.2 so this file also works inside the apache/airflow:2.9.3 image.
+pandas>=2.1.2,<2.2
 requests>=2.31,<3
 python-dotenv>=1.0,<2
 python-json-logger>=2.0,<4
@@ -9,6 +10,10 @@ kafka-python>=2.0,<3
 websocket-client>=1.7,<2
 yfinance>=0.2.40,<1
 
+# --- Airflow ---
+# Airflow itself is provided by the runtime image/container in this project.
+# Add this only if you explicitly want a local standalone Airflow install:
+# apache-airflow>=2.10,<3
 # --- Optional / not imported yet (enable when you add code) ---
 # minio>=7.2,<8                # MINIO_* in settings.py
 # polars>=1.0,<2               # faster frames (not used in current code)
