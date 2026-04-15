@@ -1,18 +1,37 @@
-# Phase 4 — local Apache Kafka for simulated streaming (student / dev).
-# Start: docker compose up -d
-# Stop:  docker compose down
+# Shared image: Apache Airflow + pip deps for `app.*` (see infra/docker/airflow/Dockerfile).
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: infra/docker/airflow/Dockerfile
+  image: crypto-dashboard-airflow:2.9.3
+
+# Backend is mounted at /opt/airflow/project; settings.py resolves PROJECT_ROOT to /opt/airflow,
+# so DATA_DIR is /opt/airflow/data — mount repo-root data/ there for seeds (metals CSV, etc.).
+x-airflow-volumes: &airflow-volumes
+  - ./backend/app/orchestration/dags:/opt/airflow/dags
+  - ./backend/logs:/opt/airflow/logs
+  - ./backend:/opt/airflow/project
+  - ./data:/opt/airflow/data
 
 services:
+  # ---------------------------------------------------------
+  # ZOOKEEPER
+  # ---------------------------------------------------------
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.1
+    container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
 
+  # ---------------------------------------------------------
+  # KAFKA
+  # ---------------------------------------------------------
   kafka:
     image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka
     depends_on:
       - zookeeper
     ports:
@@ -25,3 +44,88 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  # ---------------------------------------------------------
+  # AIRFLOW POSTGRES DATABASE
+  # ---------------------------------------------------------
+  airflow-db:
+    image: postgres:15
+    container_name: airflow-db
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - "5433:5432"
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+
+  # ---------------------------------------------------------
+  # AIRFLOW INIT
+  # ---------------------------------------------------------
+  airflow-init:
+    <<: *airflow-common
+    container_name: airflow-init
+    depends_on:
+      - airflow-db
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__SECRET_KEY: "airflow_secret_key"
+      PYTHONPATH: /opt/airflow/project
+    volumes: *airflow-volumes
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >-
+        airflow db migrate &&
+        airflow users create
+        --username admin
+        --password admin
+        --firstname Admin
+        --lastname User
+        --role Admin
+        --email admin@example.com
+        || true
+
+  # ---------------------------------------------------------
+  # AIRFLOW WEBSERVER
+  # ---------------------------------------------------------
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: airflow-webserver
+    depends_on:
+      - airflow-db
+      - airflow-init
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__SECRET_KEY: "airflow_secret_key"
+      PYTHONPATH: /opt/airflow/project
+    volumes: *airflow-volumes
+    command: webserver
+    ports:
+      # host 8081 if 8080 is already taken (IIS, other Airflow, etc.)
+      - "8081:8080"
+
+  # ---------------------------------------------------------
+  # AIRFLOW SCHEDULER
+  # ---------------------------------------------------------
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: airflow-scheduler
+    depends_on:
+      - airflow-db
+      - airflow-init
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__SECRET_KEY: "airflow_secret_key"
+      PYTHONPATH: /opt/airflow/project
+    volumes: *airflow-volumes
+    command: scheduler
+
+volumes:
+  airflow_postgres_data:
