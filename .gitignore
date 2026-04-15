@@ -29,3 +29,7 @@ data/gold/*.parquet
 /venv/
 /.venv/
 
+# Ignore all data folders
+data/
+gold_exports/
+silver_exports/
