@@ -1,3 +1,8 @@
+"""
+Updated run_stream_pipeline.py
+Starts all streaming processes including the news WS producer and consumer.
+"""
+
 from __future__ import annotations
 
 import signal
@@ -14,13 +19,7 @@ PROCESSES: list[subprocess.Popen] = []
 
 
 def start_process(module_name: str) -> subprocess.Popen:
-    """
-    Start a Python module as a subprocess.
-    Example:
-        python -m app.ingestion.streaming.kafka_consumer
-    """
     logger.info(f"Starting process: {module_name}")
-
     process = subprocess.Popen(
         [sys.executable, "-m", module_name],
         stdout=None,
@@ -34,7 +33,7 @@ def stop_all_processes() -> None:
     logger.info("Stopping all streaming processes")
 
     for proc in PROCESSES:
-        if proc.poll() is None:  # still running
+        if proc.poll() is None:
             try:
                 proc.terminate()
             except Exception as exc:
@@ -59,33 +58,37 @@ def handle_shutdown(signum, frame) -> None:
 def run_pipeline() -> None:
     """
     Starts:
-    - Kafka consumer
-    - Binance crypto producer
-    - Finnhub forex producer
-    - Metals replay producer
+    - Market tick Kafka consumer     (bronze/stream_ticks/)
+    - News Kafka consumer            (bronze/stream_news/)
+    - Binance crypto WS producer     (BTC/USD, ETH/USD)
+    - Finnhub forex WS producer      (EUR/USD, GBP/USD)
+    - Finnhub news WS producer       (all NEWS_TARGETS)
+    - Metals yFinance poll producer  (XAU/USD, XAG/USD)
     """
-
     signal.signal(signal.SIGINT, handle_shutdown)
     signal.signal(signal.SIGTERM, handle_shutdown)
 
     logger.info("Starting full stream pipeline")
 
-    # 1. Start consumer first so it is ready to receive messages
+    # 1. Start consumers first so they are ready before any messages arrive
     start_process("app.ingestion.streaming.kafka_consumer")
+    start_process("app.ingestion.streaming.news_kafka_consumer")
 
-    # small delay so consumer connects before producers publish
+    # Small delay so consumers connect before producers publish
     time.sleep(3)
 
-    # 2. Start producers
+    # 2. Start market producers
     start_process("app.ingestion.streaming.binance_ws_producer")
     start_process("app.ingestion.streaming.finnhub_ws_producer")
     start_process("app.ingestion.streaming.yfinance_metals_producer")
+
+    # 3. Start news producer
+    start_process("app.ingestion.streaming.finnhub_news_ws_producer")
 
     logger.info("All stream processes started successfully")
 
     try:
         while True:
-            # monitor subprocesses
             for proc in PROCESSES:
                 if proc.poll() is not None:
                     logger.warning(
