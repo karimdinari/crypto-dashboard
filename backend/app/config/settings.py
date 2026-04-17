@@ -50,6 +50,7 @@ BINANCE_WS_BASE_URL = "wss://stream.binance.com:9443/ws"
 # API keys
 # -------------------------------------------------------------------
 FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "")
+FINHUB_NEWS_API_KEY = os.getenv("FINHUB_NEWS_API_KEY", "")
 EXCHANGERATE_API_KEY = os.getenv("EXCHANGERATE_API_KEY", "")
 
 # -------------------------------------------------------------------
