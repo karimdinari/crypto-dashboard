@@ -10,7 +10,7 @@ export function PageLayout({
 }) {
   return (
     <div
-      className={`mx-auto w-full max-w-6xl px-3 py-5 md:px-5 md:py-7 ${className}`}
+      className={`mx-auto w-full max-w-[1800px] px-3 py-5 md:px-5 md:py-7 ${className}`}
     >
       {children}
     </div>

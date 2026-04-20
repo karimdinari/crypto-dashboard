@@ -1,71 +1,90 @@
 @import 'tailwindcss';
 
-/* Dark = TradingView-style terminal (default) */
+/* Market Analytics Terminal — signature dark: atmospheric, electric, institutional */
 :root,
 [data-theme='dark'] {
   color-scheme: dark;
-  --app-terminal-bg: #0f0f0f;
-  --app-terminal-surface: #1e222d;
-  --app-terminal-elevated: #2a2e39;
-  --app-terminal-border: #363a45;
-  --app-terminal-muted: #787b86;
-  --app-terminal-text: #d1d4dc;
-  --app-terminal-grid: #363c4e;
-  --app-up: #26a69a;
-  --app-down: #ef5350;
-  --app-accent: #2962ff;
-  --app-brand: #f97316;
-  --app-crypto: #9c6bff;
-  --app-forex: #5b9cf6;
-  --app-metals: #fbc02d;
-  --app-news-bg: rgba(42, 31, 61, 0.88);
-  --app-news-border: rgba(106, 77, 143, 0.55);
-  --app-news-hover: rgba(53, 37, 72, 0.92);
-  --app-news-icon: #b39ddb;
-  --app-chart-bg: #0f0f0f;
-  --app-chart-text: #b2b5be;
-  --app-chart-grid: #363c4e;
-  --app-chart-border: #363a45;
-  --app-chart-crosshair: rgba(117, 134, 150, 0.45);
-  --app-chart-vol-up: rgba(38, 166, 154, 0.45);
-  --app-chart-vol-down: rgba(239, 83, 80, 0.45);
+  --app-terminal-bg: #050608;
+  --app-terminal-surface: #0c0e14;
+  --app-terminal-elevated: #12151f;
+  --app-terminal-border: #1e2433;
+  --app-terminal-muted: #8892a8;
+  --app-terminal-text: #eef0f5;
+  --app-terminal-grid: #1a2030;
+  --app-up: #3ee8b0;
+  --app-down: #ff6b6b;
+  --app-accent: #5ce1ff;
+  --app-brand: #e8b84a;
+  --app-crypto: #00f0ff;
+  --app-forex: #9d8cff;
+  --app-metals: #f4c15a;
+  --app-news-bg: rgba(12, 14, 22, 0.94);
+  --app-news-border: rgba(92, 225, 255, 0.15);
+  --app-news-hover: rgba(18, 21, 32, 0.98);
+  --app-news-icon: #7dd3fc;
+  --app-chart-bg: #06070b;
+  --app-chart-text: #9aa3b5;
+  --app-chart-grid: #1c2230;
+  --app-chart-border: #252b3a;
+  --app-chart-crosshair: rgba(148, 163, 184, 0.28);
+  --app-chart-vol-up: rgba(62, 232, 176, 0.38);
+  --app-chart-vol-down: rgba(255, 107, 107, 0.38);
   --app-focus-ring: var(--app-accent);
+  --app-glass: linear-gradient(
+    145deg,
+    rgba(18, 21, 32, 0.92) 0%,
+    rgba(10, 12, 18, 0.88) 50%,
+    rgba(14, 16, 24, 0.9) 100%
+  );
+  --app-glass-border: rgba(255, 255, 255, 0.07);
+  --app-sidebar: #07080d;
+  --mat-aurora-1: rgba(0, 240, 255, 0.12);
+  --mat-aurora-2: rgba(157, 140, 255, 0.1);
+  --mat-aurora-3: rgba(244, 193, 90, 0.08);
+  --mat-scan: rgba(92, 225, 255, 0.03);
 }
 
-/* Light = TradingView-style light workspace */
 [data-theme='light'] {
   color-scheme: light;
-  --app-terminal-bg: #ffffff;
-  --app-terminal-surface: #f0f3fa;
-  --app-terminal-elevated: #e0e3eb;
-  --app-terminal-border: #d1d4dc;
-  --app-terminal-muted: #787b86;
-  --app-terminal-text: #131722;
-  --app-terminal-grid: #e0e3eb;
-  --app-up: #089981;
-  --app-down: #f23645;
-  --app-accent: #2962ff;
-  --app-brand: #f97316;
-  --app-crypto: #7c4dff;
-  --app-forex: #1565c0;
-  --app-metals: #f57c00;
-  --app-news-bg: rgba(237, 231, 246, 0.96);
-  --app-news-border: rgba(124, 77, 255, 0.35);
-  --app-news-hover: rgba(225, 215, 241, 0.98);
-  --app-news-icon: #7c4dff;
+  --app-terminal-bg: #f0f2f8;
+  --app-terminal-surface: #ffffff;
+  --app-terminal-elevated: #e8ecf4;
+  --app-terminal-border: #d4dae8;
+  --app-terminal-muted: #5c6578;
+  --app-terminal-text: #0c1020;
+  --app-terminal-grid: #e2e8f0;
+  --app-up: #059669;
+  --app-down: #dc2626;
+  --app-accent: #0284c7;
+  --app-brand: #b45309;
+  --app-crypto: #0891b2;
+  --app-forex: #6d28d9;
+  --app-metals: #b45309;
+  --app-news-bg: rgba(255, 255, 255, 0.96);
+  --app-news-border: rgba(2, 132, 199, 0.18);
+  --app-news-hover: rgba(241, 245, 249, 0.98);
+  --app-news-icon: #0369a1;
   --app-chart-bg: #ffffff;
-  --app-chart-text: #131722;
-  --app-chart-grid: #e0e3eb;
-  --app-chart-border: #d1d4dc;
-  --app-chart-crosshair: rgba(19, 23, 34, 0.12);
-  --app-chart-vol-up: rgba(8, 153, 129, 0.4);
-  --app-chart-vol-down: rgba(242, 54, 69, 0.4);
+  --app-chart-text: #0f172a;
+  --app-chart-grid: #e2e8f0;
+  --app-chart-border: #cbd5e1;
+  --app-chart-crosshair: rgba(15, 23, 42, 0.1);
+  --app-chart-vol-up: rgba(5, 150, 105, 0.3);
+  --app-chart-vol-down: rgba(220, 38, 38, 0.3);
   --app-focus-ring: var(--app-accent);
+  --app-glass: rgba(255, 255, 255, 0.9);
+  --app-glass-border: rgba(15, 23, 42, 0.06);
+  --app-sidebar: #f8fafc;
+  --mat-aurora-1: rgba(8, 145, 178, 0.06);
+  --mat-aurora-2: rgba(109, 40, 217, 0.05);
+  --mat-aurora-3: rgba(180, 83, 9, 0.05);
+  --mat-scan: transparent;
 }
 
 @theme {
-  --font-sans: 'Roboto', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Roboto Mono', ui-monospace, monospace;
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Sora', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
   --color-terminal-bg: var(--app-terminal-bg);
   --color-terminal-surface: var(--app-terminal-surface);
@@ -95,6 +114,11 @@
     html {
       scroll-behavior: auto;
     }
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 
   body {
@@ -106,11 +130,10 @@
   }
 
   ::selection {
-    background-color: color-mix(in srgb, var(--app-accent) 35%, transparent);
+    background-color: color-mix(in srgb, var(--app-accent) 38%, transparent);
     color: var(--app-terminal-text);
   }
 
-  /* Visible focus for keyboard users; mouse clicks stay clean */
   :where(button, [href], input, select, textarea, summary):focus-visible {
     outline: 2px solid var(--app-focus-ring);
     outline-offset: 2px;
@@ -127,4 +150,275 @@
     @apply focus:rounded-md focus:bg-accent focus:px-4 focus:py-2.5 focus:text-white;
     @apply focus:font-medium focus:shadow-lg focus:outline-none;
   }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  /* Full-app atmospheric canvas */
+  .mat-canvas {
+    position: relative;
+    isolation: isolate;
+    background-color: var(--app-terminal-bg);
+  }
+
+  .mat-canvas::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 120% 80% at 0% -20%, var(--mat-aurora-1), transparent 50%),
+      radial-gradient(ellipse 100% 60% at 100% 0%, var(--mat-aurora-2), transparent 45%),
+      radial-gradient(ellipse 80% 50% at 50% 100%, var(--mat-aurora-3), transparent 50%);
+  }
+
+  .mat-canvas::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.35;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+  }
+
+  [data-theme='light'] .mat-canvas::after {
+    opacity: 0.12;
+  }
+
+  .mat-stack {
+    position: relative;
+    z-index: 1;
+  }
+
+  .glass-panel {
+    background: var(--app-glass);
+    border: 1px solid var(--app-glass-border);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.35),
+      0 16px 48px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  [data-theme='light'] .glass-panel {
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+  }
+
+  /* Hero / flagship panels */
+  .mat-hero-deck {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(
+      125deg,
+      rgba(18, 21, 32, 0.95) 0%,
+      rgba(8, 10, 16, 0.98) 42%,
+      rgba(12, 14, 22, 0.96) 100%
+    );
+    box-shadow:
+      0 0 0 1px rgba(0, 240, 255, 0.06),
+      0 24px 80px rgba(0, 0, 0, 0.55);
+  }
+
+  .mat-hero-deck::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(0, 240, 255, 0.04) 55%,
+      rgba(157, 140, 255, 0.05) 75%,
+      transparent 90%
+    );
+    pointer-events: none;
+  }
+
+  .mat-pulse-line {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(92, 225, 255, 0.35) 30%,
+      rgba(157, 140, 255, 0.25) 60%,
+      transparent
+    );
+  }
+
+  /* Asset-class strips */
+  .mat-strip-crypto {
+    box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.2);
+    background: linear-gradient(180deg, rgba(0, 240, 255, 0.08) 0%, transparent 100%);
+  }
+
+  .mat-strip-forex {
+    box-shadow: inset 0 0 0 1px rgba(157, 140, 255, 0.22);
+    background: linear-gradient(180deg, rgba(157, 140, 255, 0.07) 0%, transparent 100%);
+  }
+
+  .mat-strip-metals {
+    box-shadow: inset 0 0 0 1px rgba(244, 193, 90, 0.22);
+    background: linear-gradient(180deg, rgba(244, 193, 90, 0.08) 0%, transparent 100%);
+  }
+
+  /* Immersive chart well */
+  .mat-chart-well {
+    position: relative;
+    border-radius: 0 0 0.75rem 0.75rem;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0, 240, 255, 0.04), transparent 55%),
+      var(--app-chart-bg);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .mat-ai-card {
+    background:
+      linear-gradient(135deg, rgba(157, 140, 255, 0.06) 0%, transparent 50%),
+      linear-gradient(225deg, rgba(0, 240, 255, 0.05) 0%, transparent 45%),
+      var(--app-glass);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+  }
+
+  .mat-signal-glow-buy {
+    box-shadow: 0 0 24px rgba(62, 232, 176, 0.15);
+  }
+
+  .mat-signal-glow-sell {
+    box-shadow: 0 0 24px rgba(255, 107, 107, 0.12);
+  }
+
+  /* ─── Keyframe Animations ───────────────────────────── */
+
+  @keyframes shimmer {
+    100% { transform: translateX(200%); }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.94); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes priceFlashUp {
+    0%   { background-color: rgba(62, 232, 176, 0); }
+    25%  { background-color: rgba(62, 232, 176, 0.2); }
+    100% { background-color: rgba(62, 232, 176, 0); }
+  }
+
+  @keyframes priceFlashDown {
+    0%   { background-color: rgba(255, 107, 107, 0); }
+    25%  { background-color: rgba(255, 107, 107, 0.18); }
+    100% { background-color: rgba(255, 107, 107, 0); }
+  }
+
+  @keyframes tickerScroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 6px rgba(62, 232, 176, 0.4); }
+    50%       { box-shadow: 0 0 18px rgba(62, 232, 176, 0.8); }
+  }
+
+  @keyframes barGrow {
+    from { width: 0%; }
+  }
+
+  @keyframes rowSlideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes alertPop {
+    0%   { transform: scale(0.92); opacity: 0; }
+    70%  { transform: scale(1.02); }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+
+  @keyframes donutDraw {
+    from { stroke-dashoffset: 440; }
+  }
+
+  /* ─── Animation Classes ─────────────────────────────── */
+
+  .animate-fade-up   { animation: fadeInUp 0.45s ease both; }
+  .animate-fade-in   { animation: fadeIn 0.35s ease both; }
+  .animate-slide-right { animation: slideInRight 0.4s ease both; }
+  .animate-slide-left  { animation: slideInLeft 0.4s ease both; }
+  .animate-scale-in  { animation: scaleIn 0.3s ease both; }
+  .animate-price-up  { animation: priceFlashUp 0.75s ease both; }
+  .animate-price-down { animation: priceFlashDown 0.75s ease both; }
+  .animate-row-in    { animation: rowSlideIn 0.3s ease both; }
+  .animate-bar-grow  { animation: barGrow 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+  .animate-pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
+  .animate-alert-pop  { animation: alertPop 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+  .animate-donut-draw { animation: donutDraw 1.2s cubic-bezier(0.4, 0, 0.2, 1) both; }
+
+  /* Stagger delay helpers */
+  .delay-75  { animation-delay: 75ms; }
+  .delay-150 { animation-delay: 150ms; }
+  .delay-225 { animation-delay: 225ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-375 { animation-delay: 375ms; }
+  .delay-450 { animation-delay: 450ms; }
+  .delay-525 { animation-delay: 525ms; }
+  .delay-600 { animation-delay: 600ms; }
+
+  /* ─── Ticker Strip ──────────────────────────────────── */
+
+  .ticker-track {
+    display: flex;
+    width: max-content;
+    animation: tickerScroll 28s linear infinite;
+  }
+
+  .ticker-track:hover {
+    animation-play-state: paused;
+  }
+
+  /* ─── Custom Scrollbar ──────────────────────────────── */
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--app-terminal-border);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--app-terminal-muted); }
+
+  /* ─── Page entry ────────────────────────────────────── */
+
+  .page-enter { animation: fadeInUp 0.4s ease both; }
+
+  /* ─── Donut segment hover ───────────────────────────── */
+
+  .donut-segment {
+    transition: stroke-width 0.2s ease, opacity 0.2s ease;
+    cursor: pointer;
+  }
+  .donut-segment:hover { stroke-width: 22px; }
 }

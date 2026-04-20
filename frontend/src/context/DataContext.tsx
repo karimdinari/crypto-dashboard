@@ -54,19 +54,32 @@ function normalizeStreamTick(row: Record<string, unknown>): KafkaStreamTick {
 }
 
 function normalizeAsset(row: Record<string, unknown>): Asset {
+  const price = Number(row.price)
+  const ma20 = Number(row.ma20)
+  const ma50 = Number(row.ma50)
+  let ma7 = Number(row.ma7)
+  let ma30 = Number(row.ma30)
+  if (!Number.isFinite(ma7)) {
+    ma7 = ma20 * 0.52 + price * 0.48
+  }
+  if (!Number.isFinite(ma30)) {
+    ma30 = ma20 * 0.55 + ma50 * 0.45
+  }
   return {
     symbol: String(row.symbol),
     name: String(row.name),
     market: row.market as Asset['market'],
-    price: Number(row.price),
+    price,
     changePct: Number(row.changePct),
     volume: String(row.volume),
     rsi: Number(row.rsi),
     macd: Number(row.macd),
     macdSignal: Number(row.macdSignal),
     volatility: Number(row.volatility),
-    ma20: Number(row.ma20),
-    ma50: Number(row.ma50),
+    ma7,
+    ma30,
+    ma20,
+    ma50,
     prediction: row.prediction as Asset['prediction'],
     confidence: Number(row.confidence),
     sentimentScore: Number(row.sentimentScore),

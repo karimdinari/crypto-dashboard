@@ -15,6 +15,8 @@ export interface Asset {
   macd: number
   macdSignal: number
   volatility: number
+  ma7: number
+  ma30: number
   ma20: number
   ma50: number
   prediction: PredictionSignal

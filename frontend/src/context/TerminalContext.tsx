@@ -11,7 +11,7 @@ import { ASSETS } from '../data/mock'
 import { useData } from './DataContext'
 import type { MarketType, Timeframe } from '../types'
 
-export type ChartStyle = 'candle' | 'line'
+export type ChartStyle = 'candle' | 'line' | 'area' | 'baseline'
 
 interface TerminalState {
   selectedSymbol: string
@@ -22,8 +22,9 @@ interface TerminalState {
   setMarketFilter: (m: MarketType | 'all') => void
   chartStyle: ChartStyle
   setChartStyle: (c: ChartStyle) => void
-  watchlistQuery: string
-  setWatchlistQuery: (q: string) => void
+  /** Global terminal search (header + watchlist filter). */
+  terminalSearch: string
+  setTerminalSearch: (q: string) => void
 }
 
 const TerminalContext = createContext<TerminalState | null>(null)
@@ -34,7 +35,7 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
   const [timeframe, setTimeframe] = useState<Timeframe>('1D')
   const [marketFilter, setMarketFilter] = useState<MarketType | 'all'>('all')
   const [chartStyle, setChartStyle] = useState<ChartStyle>('candle')
-  const [watchlistQuery, setWatchlistQuery] = useState('')
+  const [terminalSearch, setTerminalSearch] = useState('')
 
   useEffect(() => {
     if (!assets.length) return
@@ -57,8 +58,8 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
       setMarketFilter,
       chartStyle,
       setChartStyle,
-      watchlistQuery,
-      setWatchlistQuery,
+      terminalSearch,
+      setTerminalSearch,
     }),
     [
       selectedSymbol,
@@ -66,7 +67,7 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
       timeframe,
       marketFilter,
       chartStyle,
-      watchlistQuery,
+      terminalSearch,
     ],
   )
 

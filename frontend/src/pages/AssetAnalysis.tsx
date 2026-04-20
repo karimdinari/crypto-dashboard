@@ -48,7 +48,7 @@ export function AssetAnalysis() {
           to="/"
           className="text-sm text-accent hover:underline"
         >
-          ← Market Terminal
+          ← Dashboard
         </Link>
       </div>
 
