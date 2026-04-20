@@ -57,6 +57,7 @@ class SentimentAnalyzer:
 
     def __init__(self, batch_size: int = 32) -> None:
         self._batch_size = batch_size
+        self.model_name = "finbert" 
         self._pipe = self._load_pipeline()
 
     # ------------------------------------------------------------------
