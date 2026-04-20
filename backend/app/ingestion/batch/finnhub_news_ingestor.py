@@ -10,6 +10,9 @@ Free-tier fix: the /news endpoint does NOT support `from`/`to` date
 parameters on the free plan — passing them returns an empty list.
 We fetch the latest batch per category without date filtering, then
 apply a lookback filter locally using the article's `datetime` field.
+
+Default lookback is **1 day** so scheduled daily runs only keep very recent
+articles (append to Bronze; duplicates removed by `news_id` on append).
 """
 
 from datetime import datetime, timedelta, timezone
@@ -31,7 +34,7 @@ from app.etl.bronze.write_bronze import write_bronze_table
 
 logger = get_logger(__name__)
 
-_DEFAULT_LOOKBACK_DAYS = 3
+_DEFAULT_LOOKBACK_DAYS = 1
 
 # Finnhub general news categories to query
 _NEWS_CATEGORIES = ["general", "forex", "crypto", "merger"]

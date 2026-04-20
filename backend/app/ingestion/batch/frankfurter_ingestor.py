@@ -1,7 +1,9 @@
 """
-ExchangeRate batch ingestor for forex rates.
-Fetches EUR/USD and GBP/USD historical exchange rates.
-Automatically writes to Bronze layer.
+Frankfurter batch ingestor for forex rates.
+
+- **Default (`historical=False`)**: latest ECB reference (`/latest`) for each pair,
+  with `timestamp` set from the API rate **date** — for daily append to Bronze.
+- **`historical=True`**: time series over `days` (backfill / one-offs).
 """
 
 from __future__ import annotations
@@ -64,6 +66,18 @@ class FrankfurterIngestor(BaseIngestor):
 
                 if response and "rates" in response and quote in response["rates"]:
                     rate = response["rates"][quote]
+                    date_str = response.get("date")
+                    if date_str:
+                        timestamp = (
+                            datetime.strptime(str(date_str), "%Y-%m-%d")
+                            .replace(tzinfo=timezone.utc)
+                            .isoformat()
+                        )
+                    else:
+                        now = datetime.now(timezone.utc)
+                        timestamp = datetime(
+                            now.year, now.month, now.day, tzinfo=timezone.utc
+                        ).isoformat()
 
                     record = {
                         "symbol": symbol,
@@ -72,6 +86,7 @@ class FrankfurterIngestor(BaseIngestor):
                         "source": "frankfurter",
                         "base_currency": base,
                         "quote_currency": quote,
+                        "timestamp": timestamp,
                         "exchange_rate": rate,
                         "ingestion_time": ingestion_time,
                     }
@@ -182,28 +197,27 @@ class FrankfurterIngestor(BaseIngestor):
 
         return df
 
-    def fetch(self, historical: bool = True) -> Optional[pd.DataFrame]:
+    def fetch(self, historical: bool = False) -> Optional[pd.DataFrame]:
         """
-        Fetch forex data (current or historical).
+        Fetch forex data (latest daily snapshot or historical).
 
         Args:
-            historical: If True, fetch historical data; if False, fetch current only
+            historical: If True, multi-day history; if False, latest `/latest` row per pair.
 
         Returns:
             DataFrame with forex rate data or None
         """
         if historical:
             return self.fetch_historical()
-        else:
-            return self.fetch_current()
+        return self.fetch_current()
 
-    def ingest_and_write(self, historical: bool = True, mode: str = "overwrite") -> bool:
+    def ingest_and_write(self, historical: bool = False, mode: str = "append") -> bool:
         """
         Fetch forex data and write to Bronze layer.
         
         Args:
-            historical: If True, fetch historical; if False, fetch current
-            mode: Write mode - 'append' or 'overwrite'
+            historical: If True, multi-day history; if False, latest snapshot
+            mode: Write mode - 'append' (default) or 'overwrite'
             
         Returns:
             True if successful, False otherwise
@@ -245,15 +259,15 @@ class FrankfurterIngestor(BaseIngestor):
             return False
 
 
-def ingest_exchangerate(days: int = 30, historical: bool = True, write_to_bronze: bool = False, mode: str = "overwrite") -> Optional[pd.DataFrame]:
+def ingest_exchangerate(days: int = 30, historical: bool = False, write_to_bronze: bool = False, mode: str = "append") -> Optional[pd.DataFrame]:
     """
     Convenience function to run ExchangeRate ingestion.
 
     Args:
         days: Number of days of historical data (default: 30)
-        historical: If True, fetch historical; if False, fetch current
+        historical: If True, multi-day history; if False, latest snapshot (default)
         write_to_bronze: If True, write to Bronze layer
-        mode: Write mode - 'append' or 'overwrite'
+        mode: Write mode - 'append' (default) or 'overwrite'
 
     Returns:
         DataFrame with forex rate data
@@ -272,14 +286,14 @@ def ingest_exchangerate(days: int = 30, historical: bool = True, write_to_bronze
 if __name__ == "__main__":
     # ✅ When run directly, fetch AND write to Bronze
     print("\n" + "="*60)
-    print("Frankfurter Historical Ingestion → Bronze Layer")
+    print("Frankfurter daily snapshot → Bronze (append)")
     print("="*60 + "\n")
     
     ingestor = FrankfurterIngestor(days=30)
-    success = ingestor.ingest_and_write(historical=True, mode="overwrite")
+    success = ingestor.ingest_and_write(historical=False, mode="append")
 
     if success:
-        print(f"\n✅ Forex Historical Ingestion Successful")
+        print(f"\n✅ Forex daily snapshot written (append)")
         print(f"Data written to: lakehouse/bronze/forex_rates/data.parquet")
         print(f"\nRun to view: python view_bronze_data.py")
     else:
