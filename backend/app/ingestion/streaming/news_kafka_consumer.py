@@ -5,6 +5,10 @@ Consumes news events from the ``news_stream`` Kafka topic published by
 ``finnhub_news_ws_producer.py`` and persists them to hourly Bronze
 parquet files — same Option-A strategy used by the market tick consumer.
 
+SENTIMENT: every article is scored with FinBERT before being written.
+The parquet files therefore already contain sentiment columns, which
+the frontend can read directly — no extra pipeline step needed.
+
 Layout:
     lakehouse/bronze/stream_news/
         date=YYYY-MM-DD/
@@ -27,6 +31,7 @@ import pandas as pd
 
 from app.config.logging_config import get_logger
 from app.config.settings import BRONZE_PATH
+from app.features.sentiment_analyzer import SentimentAnalyzer   # <-- FinBERT
 from app.ingestion.streaming.kafka_config import (
     CONSUMER_CONFIG,
     TOPIC_NEWS_STREAM,
@@ -35,11 +40,18 @@ from app.ingestion.streaming.kafka_config import (
 logger = get_logger(__name__)
 
 # ---------------------------------------------------------------------------
+# FinBERT — loaded ONCE when the consumer process starts.
+# Scoring ~1-2 articles/sec on CPU is fast enough for Finnhub free tier
+# (a few articles per minute at most).
+# ---------------------------------------------------------------------------
+_sentiment = SentimentAnalyzer()
+
+# ---------------------------------------------------------------------------
 # Tuning
 # ---------------------------------------------------------------------------
 
-FLUSH_BATCH_SIZE = 50            # news arrives slower than ticks
-FLUSH_INTERVAL_SECONDS = 60      # flush at least every minute
+FLUSH_BATCH_SIZE       = 50
+FLUSH_INTERVAL_SECONDS = 60
 
 GROUP_NEWS_STREAM = "news-stream-consumer"
 
@@ -49,6 +61,7 @@ GROUP_NEWS_STREAM = "news-stream-consumer"
 
 STREAM_NEWS_DIR = Path(BRONZE_PATH) / "stream_news"
 
+# sentiment columns added after the original schema
 NEWS_TICK_COLUMNS: list[str] = [
     "symbol",
     "display_symbol",
@@ -62,6 +75,11 @@ NEWS_TICK_COLUMNS: list[str] = [
     "source_name",
     "ingestion_time",
     "consumed_at",
+    # FinBERT sentiment
+    "sentiment_label",      # "positive" | "neutral" | "negative"
+    "sentiment_score",      # confidence 0-1
+    "sentiment_compound",   # signed -1 to +1  (use this in the frontend)
+    "sentiment_model",      # always "finbert"
 ]
 
 DATETIME_COLUMNS: list[str] = ["timestamp", "ingestion_time", "consumed_at"]
@@ -102,48 +120,81 @@ def _df_for_parquet_write(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+# ---------------------------------------------------------------------------
+# Article normalisation + sentiment scoring
+# ---------------------------------------------------------------------------
+
 def _normalise_article(raw: dict[str, Any]) -> dict[str, Any] | None:
-    """Validate and normalise a raw Kafka news message."""
-    symbol = raw.get("symbol")
+    """
+    Validate, normalise, and sentiment-score a raw Kafka news message.
+
+    FinBERT scores title + summary concatenated.
+    Returns None if the article is invalid and must be skipped.
+    """
+    symbol  = raw.get("symbol")
     news_id = raw.get("news_id")
-    title = raw.get("title", "")
+    title   = raw.get("title", "")
 
     if not symbol:
         logger.warning("Skipping article — missing symbol", extra={"raw": str(raw)[:200]})
         return None
-
     if not news_id:
         logger.warning("Skipping article — missing news_id", extra={"symbol": symbol})
         return None
-
     if not title:
         logger.warning("Skipping article — missing title", extra={"symbol": symbol})
         return None
 
+    # timestamp
     ts_raw = raw.get("timestamp") or raw.get("ingestion_time")
     try:
         timestamp = _utc_isoformat(pd.to_datetime(ts_raw, utc=True, errors="raise"))
     except Exception:
         timestamp = _utc_isoformat(datetime.now(timezone.utc))
 
+    # ingestion_time
     ing_raw = raw.get("ingestion_time", "")
-    ingestion_time = _utc_isoformat(pd.to_datetime(ing_raw, utc=True, errors="coerce")) if ing_raw else ""
+    ingestion_time = (
+        _utc_isoformat(pd.to_datetime(ing_raw, utc=True, errors="coerce"))
+        if ing_raw else ""
+    )
+
+    # ----------------------------------------------------------------
+    # FinBERT sentiment — score title + summary together
+    # ----------------------------------------------------------------
+    summary_text = str(raw.get("summary", "") or "").strip()
+    title_text   = str(title).strip()
+    text_to_score = f"{title_text}. {summary_text}" if summary_text else title_text
+
+    sentiment = _sentiment.score(text_to_score)   # always returns a dict
+    # sentiment = {"label": "positive"|"neutral"|"negative",
+    #              "score": 0.94, "compound": 0.94, "model": "finbert"}
 
     return {
-        "symbol": str(symbol).strip(),
-        "display_symbol": str(raw.get("display_symbol", symbol)).strip(),
-        "market_type": str(raw.get("market_type", "unknown")).strip(),
-        "source": str(raw.get("source", "finnhub_ws")).strip(),
-        "news_id": str(news_id).strip(),
-        "timestamp": timestamp,
-        "title": str(title)[:500],
-        "summary": str(raw.get("summary", ""))[:1000],
-        "url": str(raw.get("url", "")),
-        "source_name": str(raw.get("source_name", "")),
-        "ingestion_time": ingestion_time,
-        "consumed_at": _utc_isoformat(datetime.now(timezone.utc)),
+        # original fields
+        "symbol":           str(symbol).strip(),
+        "display_symbol":   str(raw.get("display_symbol", symbol)).strip(),
+        "market_type":      str(raw.get("market_type", "unknown")).strip(),
+        "source":           str(raw.get("source", "finnhub_ws")).strip(),
+        "news_id":          str(news_id).strip(),
+        "timestamp":        timestamp,
+        "title":            str(title)[:500],
+        "summary":          str(raw.get("summary", ""))[:1000],
+        "url":              str(raw.get("url", "")),
+        "source_name":      str(raw.get("source_name", "")),
+        "ingestion_time":   ingestion_time,
+        "consumed_at":      _utc_isoformat(datetime.now(timezone.utc)),
+        # sentiment fields from FinBERT
+        "sentiment_label":    sentiment["label"],
+        "sentiment_score":    sentiment["score"],
+        "sentiment_compound": sentiment["compound"],
+        "sentiment_model":    sentiment["model"],
     }
 
+
+# ---------------------------------------------------------------------------
+# Hourly parquet writer  (Option A — same strategy as market tick consumer)
+# ---------------------------------------------------------------------------
 
 def _hourly_file(now: datetime) -> Path:
     date_dir = STREAM_NEWS_DIR / f"date={now.strftime('%Y-%m-%d')}"
@@ -155,11 +206,11 @@ def _flush_to_bronze(batch: list[dict[str, Any]]) -> int:
     if not batch:
         return 0
 
-    now = datetime.now(timezone.utc)
+    now      = datetime.now(timezone.utc)
     out_file = _hourly_file(now)
     tmp_file = out_file.with_suffix(".tmp.parquet")
 
-    new_df = _enforce_schema(pd.DataFrame(batch))
+    new_df   = _enforce_schema(pd.DataFrame(batch))
     new_rows = len(new_df)
 
     if out_file.exists():
@@ -188,26 +239,29 @@ def _flush_to_bronze(batch: list[dict[str, Any]]) -> int:
         _df_for_parquet_write(combined_df).to_parquet(tmp_file, index=False)
         tmp_file.replace(out_file)
     except Exception as exc:
-        logger.error("Failed to write news file", extra={"file": str(out_file), "error": str(exc)})
+        logger.error(
+            "Failed to write news file",
+            extra={"file": str(out_file), "error": str(exc)},
+        )
         if tmp_file.exists():
             tmp_file.unlink(missing_ok=True)
         return 0
 
     logger.info(
-        "Flushed news articles to hourly Bronze file",
+        "Flushed news to Bronze",
         extra={
-            "new_rows": new_rows,
-            "total_rows": len(combined_df),
+            "new_rows":      new_rows,
+            "total_rows":    len(combined_df),
             "dupes_removed": dupes_removed,
-            "file": out_file.name,
-            "partition": out_file.parent.name,
+            "file":          out_file.name,
+            "partition":     out_file.parent.name,
         },
     )
     return new_rows
 
 
 # ---------------------------------------------------------------------------
-# Public read helpers
+# Public read helpers  (used by API / frontend)
 # ---------------------------------------------------------------------------
 
 def read_all_news(
@@ -219,14 +273,14 @@ def read_all_news(
     Read all hourly news parquet files into one sorted DataFrame.
 
     Args:
-        bronze_dir: Override root directory.
-        date:       Restrict to one day — e.g. "2026-04-17".
-        symbol:     Restrict to one symbol — e.g. "BTC/USD".
+        bronze_dir: override root directory.
+        date:       restrict to one day e.g. "2026-04-20".
+        symbol:     restrict to one symbol e.g. "BTC/USD".
 
     Returns:
-        DataFrame with NEWS_TICK_COLUMNS sorted by timestamp ascending.
+        DataFrame with NEWS_TICK_COLUMNS (including sentiment) sorted by timestamp.
     """
-    root = bronze_dir or STREAM_NEWS_DIR
+    root    = bronze_dir or STREAM_NEWS_DIR
     pattern = f"date={date}/*.parquet" if date else "**/*.parquet"
 
     files = sorted(
@@ -253,7 +307,10 @@ def read_all_news(
     if symbol:
         df = df[df["symbol"] == symbol].reset_index(drop=True)
 
-    logger.info("read_all_news complete", extra={"files_read": len(frames), "total_rows": len(df)})
+    logger.info(
+        "read_all_news complete",
+        extra={"files_read": len(frames), "total_rows": len(df)},
+    )
     return df
 
 
@@ -263,19 +320,19 @@ def read_all_news(
 
 class NewsStreamConsumer:
     """
-    Consumes ``news_stream`` events from Kafka and persists them to
-    hourly Bronze parquet files under ``bronze/stream_news/``.
+    Consumes news_stream events from Kafka, scores them with FinBERT,
+    and persists them to hourly Bronze parquet files under stream_news/.
     """
 
     def __init__(
         self,
-        flush_batch_size: int = FLUSH_BATCH_SIZE,
-        flush_interval: float = FLUSH_INTERVAL_SECONDS,
+        flush_batch_size: int   = FLUSH_BATCH_SIZE,
+        flush_interval:   float = FLUSH_INTERVAL_SECONDS,
     ) -> None:
         self.flush_batch_size = flush_batch_size
-        self.flush_interval = flush_interval
-        self._running = False
-        self._consumer = None
+        self.flush_interval   = flush_interval
+        self._running         = False
+        self._consumer        = None
 
     def _get_consumer(self):
         if self._consumer is None:
@@ -292,21 +349,22 @@ class NewsStreamConsumer:
         return self._consumer
 
     def run(self) -> None:
-        self._running = True
-        consumer = self._get_consumer()
-        batch: list[dict[str, Any]] = []
-        last_flush = time.monotonic()
-        total_consumed = 0
-        total_skipped = 0
-        total_written = 0
+        self._running  = True
+        consumer       = self._get_consumer()
+        batch:           list[dict[str, Any]] = []
+        last_flush       = time.monotonic()
+        total_consumed   = 0
+        total_skipped    = 0
+        total_written    = 0
 
         logger.info(
             "NewsStreamConsumer started",
             extra={
-                "topic": TOPIC_NEWS_STREAM,
+                "topic":            TOPIC_NEWS_STREAM,
                 "flush_batch_size": self.flush_batch_size,
                 "flush_interval_s": self.flush_interval,
-                "bronze_dir": str(STREAM_NEWS_DIR),
+                "sentiment_model":  _sentiment.model_name,
+                "bronze_dir":       str(STREAM_NEWS_DIR),
             },
         )
 
@@ -322,6 +380,7 @@ class NewsStreamConsumer:
                     total_skipped += 1
                     continue
 
+                # normalise + score with FinBERT
                 article = _normalise_article(raw)
                 if article is None:
                     total_skipped += 1
@@ -337,16 +396,16 @@ class NewsStreamConsumer:
                     last_flush = time.monotonic()
 
                     logger.info(
-                        "News consumer stats",
+                        "Consumer stats",
                         extra={
                             "total_consumed": total_consumed,
-                            "total_written": total_written,
-                            "total_skipped": total_skipped,
+                            "total_written":  total_written,
+                            "total_skipped":  total_skipped,
                         },
                     )
 
         except Exception as exc:
-            logger.error("News consumer loop error", extra={"error": str(exc)})
+            logger.error("Consumer loop error", extra={"error": str(exc)})
             raise
 
         finally:
@@ -379,7 +438,7 @@ def main() -> None:
         logger.info("Shutdown signal received", extra={"signum": signum})
         consumer.stop()
 
-    signal.signal(signal.SIGINT, _handle_signal)
+    signal.signal(signal.SIGINT,  _handle_signal)
     signal.signal(signal.SIGTERM, _handle_signal)
 
     consumer.run()
