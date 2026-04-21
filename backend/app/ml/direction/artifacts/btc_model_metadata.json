@@ -1,0 +1,33 @@
+{
+  "model_type": "random_forest",
+  "accuracy": 0.5359477124183006,
+  "precision_up": 0.5,
+  "recall_up": 0.4084507042253521,
+  "f1": 0.4496124031007752,
+  "features_used": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "returns",
+    "price_diff",
+    "ma7",
+    "ma30",
+    "volatility",
+    "volume_change",
+    "correlation",
+    "rsi",
+    "macd",
+    "macd_signal",
+    "macd_histogram",
+    "day_of_week",
+    "volume_ma7",
+    "relative_volume",
+    "ma7_ratio",
+    "ma30_ratio",
+    "momentum_3d",
+    "momentum_7d",
+    "volatility_change"
+  ]
+}

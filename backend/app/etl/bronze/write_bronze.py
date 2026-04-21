@@ -110,7 +110,7 @@ def write_bronze_table(
     if dataset_name not in DATASET_SCHEMA_MAP:
         raise ValueError(f"Unsupported Bronze dataset: {dataset_name}")
 
-    if df.empty:
+    if df is None or df.empty:
         logger.warning(
             "Skipping Bronze write — empty dataframe",
             extra={"dataset_name": dataset_name},
