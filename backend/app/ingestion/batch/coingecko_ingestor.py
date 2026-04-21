@@ -6,7 +6,8 @@ Automatically writes to Bronze layer.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import argparse
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import pandas as pd
@@ -20,18 +21,45 @@ from app.etl.bronze.write_bronze import write_bronze_table  # ✅ ADDED
 class CoinGeckoIngestor(BaseIngestor):
     """Ingestor for CoinGecko crypto prices with historical data support"""
 
-    def __init__(self, days: int = 30*12*1.5) -> None:
+    def __init__(
+        self,
+        days: int = 365,
+        start_date: Optional[str] = None,
+        symbols: Optional[list[str]] = None,
+    ):
         """
         Initialize CoinGecko ingestor.
         
         Args:
-            days: Number of days of historical data to fetch (default: 30)
-                  Max for free tier: 365 days
+            days: Number of days of historical data to fetch (default: 365)
+            start_date: Optional start date (YYYY-MM-DD or ISO). When provided,
+                        uses CoinGecko range endpoint from this date to
+                        start_date + days.
+            symbols: Optional subset of CoinGecko ids, e.g. ["bitcoin"].
         """
         super().__init__(source_name="coingecko")
         self.base_url = COINGECKO_BASE_URL
-        self.assets = CRYPTO_ASSETS
-        self.days = days
+        if symbols:
+            wanted = {s.lower() for s in symbols}
+            self.assets = [asset for asset in CRYPTO_ASSETS if asset.get("symbol", "").lower() in wanted]
+        else:
+            self.assets = CRYPTO_ASSETS
+        self.days = int(days)
+        self.start_date = start_date
+
+        if not self.assets:
+            self.logger.warning("No matching CoinGecko assets after symbol filtering")
+
+    @staticmethod
+    def _parse_utc_datetime(raw_value: str) -> datetime:
+        """Parse date input and normalize to UTC."""
+        try:
+            dt = datetime.fromisoformat(raw_value)
+            if dt.tzinfo is None:
+                return dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc)
+        except ValueError:
+            return datetime.strptime(raw_value, "%Y-%m-%d").replace(tzinfo=timezone.utc)
 
     def fetch_current(self) -> Optional[pd.DataFrame]:
         """
@@ -111,24 +139,44 @@ class CoinGeckoIngestor(BaseIngestor):
         """
         all_records = []
         ingestion_time = self.get_ingestion_time().isoformat()
+        use_range_mode = bool(self.start_date)
+
+        if use_range_mode:
+            start_dt = self._parse_utc_datetime(self.start_date)
+            end_dt = start_dt + timedelta(days=self.days)
 
         for asset in self.assets:
             symbol = asset["symbol"]
             vs_currency = asset["vs_currency"]
 
-            self.logger.info(
-                f"Fetching {self.days} days of historical data for {symbol}",
-                extra={"symbol": symbol, "days": self.days}
-            )
-
-            # CoinGecko historical endpoint
-            url = f"{self.base_url}/coins/{symbol}/market_chart"
-
-            params = {
-                "vs_currency": vs_currency,
-                "days": str(self.days),
-                "interval": "daily",
-            }
+            if use_range_mode:
+                self.logger.info(
+                    f"Fetching range historical data for {symbol}",
+                    extra={
+                        "symbol": symbol,
+                        "start_date": start_dt.isoformat(),
+                        "end_date": end_dt.isoformat(),
+                        "days": self.days,
+                    }
+                )
+                url = f"{self.base_url}/coins/{symbol}/market_chart/range"
+                params = {
+                    "vs_currency": vs_currency,
+                    "from": str(int(start_dt.timestamp())),
+                    "to": str(int(end_dt.timestamp())),
+                }
+            else:
+                self.logger.info(
+                    f"Fetching {self.days} days of historical data for {symbol}",
+                    extra={"symbol": symbol, "days": self.days}
+                )
+                # CoinGecko historical endpoint
+                url = f"{self.base_url}/coins/{symbol}/market_chart"
+                params = {
+                    "vs_currency": vs_currency,
+                    "days": str(self.days),
+                    "interval": "daily",
+                }
 
             try:
                 response = self.get_json(url, params=params)
@@ -178,9 +226,11 @@ class CoinGeckoIngestor(BaseIngestor):
             return None
 
         df = pd.DataFrame(all_records)
+        df = df.drop_duplicates(subset=["symbol", "timestamp"], keep="last")
+        df = df.sort_values(["symbol", "timestamp"]).reset_index(drop=True)
         self.logger.info(
             f"CoinGecko historical ingestion complete",
-            extra={"total_records": len(df), "days": self.days}
+            extra={"total_records": len(df), "days": self.days, "start_date": self.start_date}
         )
 
         return df
@@ -248,20 +298,29 @@ class CoinGeckoIngestor(BaseIngestor):
             return False
 
 
-def ingest_coingecko(days: int = 30, historical: bool = True, write_to_bronze: bool = False, mode: str = "overwrite") -> Optional[pd.DataFrame]:
+def ingest_coingecko(
+    days: int = 365,
+    historical: bool = True,
+    write_to_bronze: bool = False,
+    mode: str = "overwrite",
+    start_date: Optional[str] = None,
+    symbols: Optional[list[str]] = None,
+) -> Optional[pd.DataFrame]:
     """
     Convenience function to run CoinGecko ingestion.
 
     Args:
-        days: Number of days of historical data (default: 30)
+        days: Number of days of historical data (default: 365)
         historical: If True, fetch historical; if False, fetch current
         write_to_bronze: If True, write to Bronze layer
         mode: Write mode - 'append' or 'overwrite'
+        start_date: Optional start date (YYYY-MM-DD or ISO) for range fetch
+        symbols: Optional subset of CoinGecko ids, e.g. ["bitcoin"]
 
     Returns:
         DataFrame with crypto price data
     """
-    ingestor = CoinGeckoIngestor(days=days)
+    ingestor = CoinGeckoIngestor(days=days, start_date=start_date, symbols=symbols)
     
     if write_to_bronze:
         success = ingestor.ingest_and_write(historical=historical, mode=mode)
@@ -273,17 +332,44 @@ def ingest_coingecko(days: int = 30, historical: bool = True, write_to_bronze: b
 
 
 if __name__ == "__main__":
-    # ✅ When run directly, fetch AND write to Bronze
-    print("\n" + "="*60)
-    print("CoinGecko Historical Ingestion → Bronze Layer")
-    print("="*60 + "\n")
-    
-    ingestor = CoinGeckoIngestor(days=30)
-    success = ingestor.ingest_and_write(historical=True, mode="overwrite")
+    parser = argparse.ArgumentParser(description="CoinGecko historical ingestion")
+    parser.add_argument("--days", type=int, default=365, help="Number of days to fetch")
+    parser.add_argument(
+        "--start-date",
+        type=str,
+        default=None,
+        help="Optional start date (YYYY-MM-DD or ISO). Uses range endpoint.",
+    )
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="overwrite",
+        choices=["overwrite", "append"],
+        help="Bronze write mode",
+    )
+    parser.add_argument(
+        "--symbol",
+        type=str,
+        default=None,
+        help="Optional CoinGecko id to ingest (example: bitcoin)",
+    )
+    parser.add_argument(
+        "--current",
+        action="store_true",
+        help="Fetch current snapshot instead of historical",
+    )
+    args = parser.parse_args()
+
+    print("\n" + "=" * 60)
+    print("CoinGecko Ingestion -> Bronze Layer")
+    print("=" * 60 + "\n")
+
+    selected_symbols = [args.symbol] if args.symbol else None
+    ingestor = CoinGeckoIngestor(days=args.days, start_date=args.start_date, symbols=selected_symbols)
+    success = ingestor.ingest_and_write(historical=not args.current, mode=args.mode)
 
     if success:
-        print(f"\n✅ CoinGecko Historical Ingestion Successful")
-        print(f"Data written to: lakehouse/bronze/crypto_prices/data.parquet")
-        print(f"\nRun to view: python view_bronze_data.py")
+        print("\nCoinGecko ingestion successful")
+        print("Data written to: lakehouse/bronze/crypto_prices/data.parquet")
     else:
-        print("\n❌ CoinGecko Ingestion Failed")
+        print("\nCoinGecko ingestion failed")
