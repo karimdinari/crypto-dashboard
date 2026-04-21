@@ -1,0 +1,36 @@
+{
+  "trained_at": "2026-04-21T22:21:06.700951+00:00",
+  "trainer_version": "v2.0",
+  "symbols": [
+    "bitcoin",
+    "ethereum"
+  ],
+  "results": {
+    "bitcoin": {
+      "accuracy": 0.3817,
+      "f1_macro": 0.3756,
+      "cv_accuracy": 0.3641,
+      "cv_f1": 0.3517,
+      "n_features": 35,
+      "ensemble": [
+        "xgb",
+        "lgb",
+        "rf"
+      ],
+      "error": null
+    },
+    "ethereum": {
+      "accuracy": 0.3429,
+      "f1_macro": 0.3367,
+      "cv_accuracy": 0.3911,
+      "cv_f1": 0.383,
+      "n_features": 35,
+      "ensemble": [
+        "xgb",
+        "lgb",
+        "rf"
+      ],
+      "error": null
+    }
+  }
+}

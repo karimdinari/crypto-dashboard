@@ -1,0 +1,241 @@
+{
+  "symbol": "ethereum",
+  "model_version": "xgb-v2.0-ensemble",
+  "n_train": 2800,
+  "n_test": 700,
+  "n_features_total": 77,
+  "n_features_selected": 35,
+  "features": [
+    "bb_squeeze",
+    "rev_setup",
+    "is_monday",
+    "bb_pct",
+    "day_of_week",
+    "cum_ret3",
+    "stoch_k",
+    "relative_volume",
+    "obv_slope",
+    "vol_lag3",
+    "vol_lag5",
+    "is_friday",
+    "macd_cross",
+    "consec_dn",
+    "ma14",
+    "stoch_k_lag1",
+    "ret_lag1",
+    "vol_z14",
+    "adx_proxy",
+    "close_vs_atr",
+    "cum_ret5",
+    "rsi_change3",
+    "atr_pct",
+    "price_vs_ma7",
+    "bb_width",
+    "rsi_lag1",
+    "macd_histogram",
+    "consec_up",
+    "vol_lag1",
+    "ma7_slope",
+    "cum_ret10",
+    "macd_hist_d2",
+    "max_ret5",
+    "high_vol",
+    "vol_zscore"
+  ],
+  "all_features": [
+    "returns",
+    "price_diff",
+    "ma7",
+    "ma30",
+    "volatility",
+    "volume_change",
+    "correlation",
+    "rsi",
+    "macd",
+    "macd_signal",
+    "macd_histogram",
+    "day_of_week",
+    "volume_ma7",
+    "relative_volume",
+    "ma14",
+    "ma60",
+    "price_vs_ma7",
+    "price_vs_ma14",
+    "price_vs_ma30",
+    "price_vs_ma60",
+    "ma7_vs_ma30",
+    "ma14_vs_ma60",
+    "ma7_slope",
+    "ma30_slope",
+    "rsi_zone",
+    "rsi_oversold",
+    "rsi_overbought",
+    "rsi_change",
+    "rsi_change3",
+    "macd_cross",
+    "macd_hist_d1",
+    "macd_hist_d2",
+    "stoch_k",
+    "stoch_k_lag1",
+    "vol_zscore",
+    "vol_ratio",
+    "high_vol",
+    "low_vol",
+    "atr_pct",
+    "close_vs_atr",
+    "bb_width",
+    "bb_pct",
+    "bb_squeeze",
+    "adx_proxy",
+    "trending",
+    "vol_z14",
+    "obv_slope",
+    "ret_lag1",
+    "ret_lag2",
+    "ret_lag3",
+    "ret_lag4",
+    "ret_lag5",
+    "ret_lag6",
+    "ret_lag7",
+    "rsi_lag1",
+    "vol_lag1",
+    "rsi_lag3",
+    "vol_lag3",
+    "rsi_lag5",
+    "vol_lag5",
+    "cum_ret3",
+    "cum_ret5",
+    "cum_ret10",
+    "cum_ret20",
+    "skew10",
+    "kurt10",
+    "max_ret5",
+    "min_ret5",
+    "range_r",
+    "month",
+    "weekofyr",
+    "is_monend",
+    "is_monday",
+    "is_friday",
+    "consec_up",
+    "consec_dn",
+    "rev_setup"
+  ],
+  "label_map": {
+    "0": "SELL",
+    "1": "HOLD",
+    "2": "BUY"
+  },
+  "test_accuracy": 0.3429,
+  "test_f1_macro": 0.3367,
+  "cv_metrics": {
+    "cv_accuracy": 0.3911,
+    "cv_f1_macro": 0.383,
+    "n_folds": 5
+  },
+  "classification_report": {
+    "SELL": {
+      "precision": 0.3037383177570093,
+      "recall": 0.32338308457711445,
+      "f1-score": 0.3132530120481928,
+      "support": 201.0
+    },
+    "HOLD": {
+      "precision": 0.5431034482758621,
+      "recall": 0.21428571428571427,
+      "f1-score": 0.3073170731707317,
+      "support": 294.0
+    },
+    "BUY": {
+      "precision": 0.3027027027027027,
+      "recall": 0.5463414634146342,
+      "f1-score": 0.38956521739130434,
+      "support": 205.0
+    },
+    "accuracy": 0.34285714285714286,
+    "macro avg": {
+      "precision": 0.38318148957852466,
+      "recall": 0.36133675409248767,
+      "f1-score": 0.336711767536743,
+      "support": 700.0
+    },
+    "weighted avg": {
+      "precision": 0.4039683853090234,
+      "recall": 0.34285714285714286,
+      "f1-score": 0.3331084921415704,
+      "support": 700.0
+    }
+  },
+  "feature_importances": [
+    [
+      "day_of_week",
+      0.03423561900854111
+    ],
+    [
+      "consec_up",
+      0.031085770577192307
+    ],
+    [
+      "bb_pct",
+      0.030449189245700836
+    ],
+    [
+      "obv_slope",
+      0.030192023143172264
+    ],
+    [
+      "consec_dn",
+      0.029818784445524216
+    ],
+    [
+      "stoch_k",
+      0.029675934463739395
+    ],
+    [
+      "rsi_change3",
+      0.029672987759113312
+    ],
+    [
+      "rev_setup",
+      0.02964763529598713
+    ],
+    [
+      "is_friday",
+      0.029630422592163086
+    ],
+    [
+      "relative_volume",
+      0.02956397458910942
+    ],
+    [
+      "is_monday",
+      0.029509207233786583
+    ],
+    [
+      "stoch_k_lag1",
+      0.029414622113108635
+    ],
+    [
+      "bb_squeeze",
+      0.029341859742999077
+    ],
+    [
+      "rsi_lag1",
+      0.029089389368891716
+    ],
+    [
+      "macd_hist_d2",
+      0.028752915561199188
+    ]
+  ],
+  "label_distribution": {
+    "SELL": 1051,
+    "HOLD": 1297,
+    "BUY": 1152
+  },
+  "ensemble_types": [
+    "xgb",
+    "lgb",
+    "rf"
+  ]
+}
