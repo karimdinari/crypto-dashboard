@@ -30,7 +30,7 @@ import websocket
 
 from app.config.assets import NEWS_TARGETS
 from app.config.logging_config import get_logger
-from app.config.settings import FINHUB_NEWS_API_KEY, STREAM_RECONNECT_DELAY_SECONDS
+from app.config.settings import FINNHUB_API_KEY, STREAM_RECONNECT_DELAY_SECONDS
 from app.ingestion.streaming.kafka_config import (
     PRODUCER_CONFIG,
     TOPIC_NEWS_STREAM,
@@ -38,7 +38,7 @@ from app.ingestion.streaming.kafka_config import (
 
 logger = get_logger(__name__)
 
-FINNHUB_WS_URL = f"wss://ws.finnhub.io?token={FINHUB_NEWS_API_KEY}"
+FINNHUB_WS_URL = f"wss://ws.finnhub.io?token={FINNHUB_API_KEY}"
 
 # Symbols to subscribe to on the Finnhub WS
 # Finnhub news WS uses equity/forex tickers — we subscribe to the ones
@@ -122,7 +122,7 @@ class FinnhubNewsWSProducer:
     """
 
     def __init__(self) -> None:
-        if not FINHUB_NEWS_API_KEY:
+        if not FINNHUB_API_KEY:
             raise ValueError(
                 "FINNHUB_API_KEY is not set. Add it to backend/.env"
             )

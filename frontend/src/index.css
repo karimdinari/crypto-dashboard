@@ -1,424 +1,206 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Market Analytics Terminal — signature dark: atmospheric, electric, institutional */
-:root,
-[data-theme='dark'] {
-  color-scheme: dark;
-  --app-terminal-bg: #050608;
-  --app-terminal-surface: #0c0e14;
-  --app-terminal-elevated: #12151f;
-  --app-terminal-border: #1e2433;
-  --app-terminal-muted: #8892a8;
-  --app-terminal-text: #eef0f5;
-  --app-terminal-grid: #1a2030;
-  --app-up: #3ee8b0;
-  --app-down: #ff6b6b;
-  --app-accent: #5ce1ff;
-  --app-brand: #e8b84a;
-  --app-crypto: #00f0ff;
-  --app-forex: #9d8cff;
-  --app-metals: #f4c15a;
-  --app-news-bg: rgba(12, 14, 22, 0.94);
-  --app-news-border: rgba(92, 225, 255, 0.15);
-  --app-news-hover: rgba(18, 21, 32, 0.98);
-  --app-news-icon: #7dd3fc;
-  --app-chart-bg: #06070b;
-  --app-chart-text: #9aa3b5;
-  --app-chart-grid: #1c2230;
-  --app-chart-border: #252b3a;
-  --app-chart-crosshair: rgba(148, 163, 184, 0.28);
-  --app-chart-vol-up: rgba(62, 232, 176, 0.38);
-  --app-chart-vol-down: rgba(255, 107, 107, 0.38);
-  --app-focus-ring: var(--app-accent);
-  --app-glass: linear-gradient(
-    145deg,
-    rgba(18, 21, 32, 0.92) 0%,
-    rgba(10, 12, 18, 0.88) 50%,
-    rgba(14, 16, 24, 0.9) 100%
-  );
-  --app-glass-border: rgba(255, 255, 255, 0.07);
-  --app-sidebar: #07080d;
-  --mat-aurora-1: rgba(0, 240, 255, 0.12);
-  --mat-aurora-2: rgba(157, 140, 255, 0.1);
-  --mat-aurora-3: rgba(244, 193, 90, 0.08);
-  --mat-scan: rgba(92, 225, 255, 0.03);
-}
+/* Market Analytics Terminal — institutional dark fintech design system.
+   All colors HSL. Tokens only. No raw colors in components. */
 
-[data-theme='light'] {
-  color-scheme: light;
-  --app-terminal-bg: #f0f2f8;
-  --app-terminal-surface: #ffffff;
-  --app-terminal-elevated: #e8ecf4;
-  --app-terminal-border: #d4dae8;
-  --app-terminal-muted: #5c6578;
-  --app-terminal-text: #0c1020;
-  --app-terminal-grid: #e2e8f0;
-  --app-up: #059669;
-  --app-down: #dc2626;
-  --app-accent: #0284c7;
-  --app-brand: #b45309;
-  --app-crypto: #0891b2;
-  --app-forex: #6d28d9;
-  --app-metals: #b45309;
-  --app-news-bg: rgba(255, 255, 255, 0.96);
-  --app-news-border: rgba(2, 132, 199, 0.18);
-  --app-news-hover: rgba(241, 245, 249, 0.98);
-  --app-news-icon: #0369a1;
-  --app-chart-bg: #ffffff;
-  --app-chart-text: #0f172a;
-  --app-chart-grid: #e2e8f0;
-  --app-chart-border: #cbd5e1;
-  --app-chart-crosshair: rgba(15, 23, 42, 0.1);
-  --app-chart-vol-up: rgba(5, 150, 105, 0.3);
-  --app-chart-vol-down: rgba(220, 38, 38, 0.3);
-  --app-focus-ring: var(--app-accent);
-  --app-glass: rgba(255, 255, 255, 0.9);
-  --app-glass-border: rgba(15, 23, 42, 0.06);
-  --app-sidebar: #f8fafc;
-  --mat-aurora-1: rgba(8, 145, 178, 0.06);
-  --mat-aurora-2: rgba(109, 40, 217, 0.05);
-  --mat-aurora-3: rgba(180, 83, 9, 0.05);
-  --mat-scan: transparent;
-}
+@layer base {
+  :root {
+    /* True black terminal — pitch dark with subtle neutral surfaces */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 96%;
 
-@theme {
-  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Sora', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --surface: 0 0% 4%;
+    --surface-2: 0 0% 6%;
+    --surface-3: 0 0% 9%;
+    --elevated: 0 0% 7%;
 
-  --color-terminal-bg: var(--app-terminal-bg);
-  --color-terminal-surface: var(--app-terminal-surface);
-  --color-terminal-elevated: var(--app-terminal-elevated);
-  --color-terminal-border: var(--app-terminal-border);
-  --color-terminal-muted: var(--app-terminal-muted);
-  --color-terminal-text: var(--app-terminal-text);
-  --color-terminal-grid: var(--app-terminal-grid);
+    --card: 0 0% 3%;
+    --card-foreground: 0 0% 96%;
 
-  --color-up: var(--app-up);
-  --color-down: var(--app-down);
-  --color-accent: var(--app-accent);
-  --color-accent-dim: color-mix(in srgb, var(--app-accent) 18%, transparent);
-  --color-brand: var(--app-brand);
-  --color-crypto: var(--app-crypto);
-  --color-forex: var(--app-forex);
-  --color-metals: var(--app-metals);
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 96%;
+
+    --primary: 190 95% 55%;
+    --primary-foreground: 0 0% 4%;
+
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 96%;
+
+    --muted: 0 0% 9%;
+    --muted-foreground: 0 0% 55%;
+
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 96%;
+
+    --destructive: 0 75% 58%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 190 95% 55%;
+
+    --radius: 0.75rem;
+
+    /* Asset class accents */
+    --crypto: 190 95% 55%;          /* electric cyan */
+    --crypto-glow: 190 100% 65%;
+    --forex: 258 90% 66%;           /* violet */
+    --forex-glow: 258 95% 75%;
+    --metals: 42 95% 58%;           /* gold/amber */
+    --metals-glow: 42 100% 65%;
+
+    /* Signals — TradingView-style green/red candles */
+    --bull: 152 72% 42%;
+    --bull-foreground: 0 0% 98%;
+    --bear: 354 78% 56%;
+    --bear-foreground: 0 0% 98%;
+    --neutral: 0 0% 55%;
+
+    /* Pipeline tiers */
+    --bronze: 25 70% 50%;
+    --silver: 220 10% 70%;
+    --gold: 42 95% 58%;
+
+    /* Glass + glow */
+    --glass: 0 0% 4% / 0.6;
+    --glass-border: 0 0% 100% / 0.06;
+    --grid-line: 0 0% 14%;
+
+    --gradient-crypto: linear-gradient(135deg, hsl(190 95% 55% / 0.18), hsl(190 95% 55% / 0));
+    --gradient-forex: linear-gradient(135deg, hsl(258 90% 66% / 0.18), hsl(258 90% 66% / 0));
+    --gradient-metals: linear-gradient(135deg, hsl(42 95% 58% / 0.18), hsl(42 95% 58% / 0));
+    --gradient-bull: linear-gradient(180deg, hsl(145 70% 48% / 0.25), hsl(145 70% 48% / 0));
+    --gradient-bear: linear-gradient(180deg, hsl(0 78% 60% / 0.25), hsl(0 78% 60% / 0));
+    --gradient-surface: linear-gradient(180deg, hsl(222 22% 10%), hsl(222 24% 7%));
+    --gradient-hero: radial-gradient(ellipse at top, hsl(190 95% 55% / 0.08), transparent 60%);
+
+    --shadow-glow: 0 0 0 1px hsl(190 95% 55% / 0.15), 0 8px 32px -8px hsl(190 95% 55% / 0.25);
+    --shadow-card: 0 1px 0 0 hsl(210 30% 80% / 0.04) inset, 0 8px 24px -12px hsl(0 0% 0% / 0.6);
+    --shadow-elevated: 0 1px 0 0 hsl(210 30% 80% / 0.05) inset, 0 20px 48px -20px hsl(0 0% 0% / 0.7);
+
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 60%;
+    --sidebar-primary: 190 95% 55%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 0 0% 7%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 0 0% 10%;
+    --sidebar-ring: 190 95% 55%;
+  }
+
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 96%;
+  }
 }
 
 @layer base {
-  html {
-    @apply antialiased;
-    scroll-behavior: smooth;
+  * {
+    @apply border-border;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
-    * {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
+  html, body, #root {
+    @apply h-full;
   }
 
   body {
-    @apply m-0 min-h-screen bg-terminal-bg text-terminal-text font-sans text-[13px] leading-normal;
-  }
-
-  #root {
-    @apply min-h-screen;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01", "ss03";
+    background-color: #000;
+    background-image:
+      radial-gradient(ellipse 70% 40% at 15% -10%, hsl(190 95% 55% / 0.07), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 85% 0%, hsl(258 90% 66% / 0.06), transparent 60%),
+      radial-gradient(ellipse 50% 30% at 50% 110%, hsl(42 95% 58% / 0.04), transparent 60%);
+    background-attachment: fixed;
   }
 
   ::selection {
-    background-color: color-mix(in srgb, var(--app-accent) 38%, transparent);
-    color: var(--app-terminal-text);
-  }
-
-  :where(button, [href], input, select, textarea, summary):focus-visible {
-    outline: 2px solid var(--app-focus-ring);
-    outline-offset: 2px;
-  }
-
-  :where(button, [href], input, select, textarea):focus:not(:focus-visible) {
-    outline: none;
+    background: hsl(var(--primary) / 0.3);
+    color: hsl(var(--foreground));
   }
 }
 
-@layer utilities {
-  .skip-link {
-    @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200];
-    @apply focus:rounded-md focus:bg-accent focus:px-4 focus:py-2.5 focus:text-white;
-    @apply focus:font-medium focus:shadow-lg focus:outline-none;
-  }
-
-  .font-display {
-    font-family: var(--font-display);
-  }
-
-  /* Full-app atmospheric canvas */
-  .mat-canvas {
-    position: relative;
-    isolation: isolate;
-    background-color: var(--app-terminal-bg);
-  }
-
-  .mat-canvas::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background:
-      radial-gradient(ellipse 120% 80% at 0% -20%, var(--mat-aurora-1), transparent 50%),
-      radial-gradient(ellipse 100% 60% at 100% 0%, var(--mat-aurora-2), transparent 45%),
-      radial-gradient(ellipse 80% 50% at 50% 100%, var(--mat-aurora-3), transparent 50%);
-  }
-
-  .mat-canvas::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.35;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
-    mix-blend-mode: overlay;
-  }
-
-  [data-theme='light'] .mat-canvas::after {
-    opacity: 0.12;
-  }
-
-  .mat-stack {
-    position: relative;
-    z-index: 1;
-  }
-
+@layer components {
   .glass-panel {
-    background: var(--app-glass);
-    border: 1px solid var(--app-glass-border);
-    box-shadow:
-      0 0 0 1px rgba(0, 0, 0, 0.35),
-      0 16px 48px rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: hsl(0 0% 3% / 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--shadow-card);
   }
 
-  [data-theme='light'] .glass-panel {
-    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+  .terminal-card {
+    @apply rounded-lg bg-card border border-border;
+    box-shadow: var(--shadow-card);
   }
 
-  /* Hero / flagship panels */
-  .mat-hero-deck {
-    position: relative;
-    overflow: hidden;
-    border-radius: 1.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: linear-gradient(
-      125deg,
-      rgba(18, 21, 32, 0.95) 0%,
-      rgba(8, 10, 16, 0.98) 42%,
-      rgba(12, 14, 22, 0.96) 100%
-    );
-    box-shadow:
-      0 0 0 1px rgba(0, 240, 255, 0.06),
-      0 24px 80px rgba(0, 0, 0, 0.55);
+  .grid-bg {
+    background-image:
+      linear-gradient(hsl(var(--grid-line) / 0.5) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--grid-line) / 0.5) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
 
-  .mat-hero-deck::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      105deg,
-      transparent 40%,
-      rgba(0, 240, 255, 0.04) 55%,
-      rgba(157, 140, 255, 0.05) 75%,
-      transparent 90%
-    );
-    pointer-events: none;
+  .mono {
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-feature-settings: "tnum", "zero";
   }
 
-  .mat-pulse-line {
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(92, 225, 255, 0.35) 30%,
-      rgba(157, 140, 255, 0.25) 60%,
-      transparent
-    );
+  .pulse-dot {
+    @apply relative inline-flex h-2 w-2 rounded-full;
+  }
+  .pulse-dot::after {
+    content: "";
+    @apply absolute inset-0 rounded-full;
+    background: inherit;
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
-  /* Asset-class strips */
-  .mat-strip-crypto {
-    box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.2);
-    background: linear-gradient(180deg, rgba(0, 240, 255, 0.08) 0%, transparent 100%);
+  @keyframes pulse-ring {
+    0% { transform: scale(1); opacity: 0.7; }
+    80%, 100% { transform: scale(2.4); opacity: 0; }
   }
 
-  .mat-strip-forex {
-    box-shadow: inset 0 0 0 1px rgba(157, 140, 255, 0.22);
-    background: linear-gradient(180deg, rgba(157, 140, 255, 0.07) 0%, transparent 100%);
-  }
-
-  .mat-strip-metals {
-    box-shadow: inset 0 0 0 1px rgba(244, 193, 90, 0.22);
-    background: linear-gradient(180deg, rgba(244, 193, 90, 0.08) 0%, transparent 100%);
-  }
-
-  /* Immersive chart well */
-  .mat-chart-well {
-    position: relative;
-    border-radius: 0 0 0.75rem 0.75rem;
-    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0, 240, 255, 0.04), transparent 55%),
-      var(--app-chart-bg);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  }
-
-  .mat-ai-card {
-    background:
-      linear-gradient(135deg, rgba(157, 140, 255, 0.06) 0%, transparent 50%),
-      linear-gradient(225deg, rgba(0, 240, 255, 0.05) 0%, transparent 45%),
-      var(--app-glass);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-  }
-
-  .mat-signal-glow-buy {
-    box-shadow: 0 0 24px rgba(62, 232, 176, 0.15);
-  }
-
-  .mat-signal-glow-sell {
-    box-shadow: 0 0 24px rgba(255, 107, 107, 0.12);
-  }
-
-  /* ─── Keyframe Animations ───────────────────────────── */
-
-  @keyframes shimmer {
-    100% { transform: translateX(200%); }
-  }
-
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(18px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-
-  @keyframes slideInRight {
-    from { opacity: 0; transform: translateX(24px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-
-  @keyframes slideInLeft {
-    from { opacity: 0; transform: translateX(-24px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-
-  @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.94); }
-    to   { opacity: 1; transform: scale(1); }
-  }
-
-  @keyframes priceFlashUp {
-    0%   { background-color: rgba(62, 232, 176, 0); }
-    25%  { background-color: rgba(62, 232, 176, 0.2); }
-    100% { background-color: rgba(62, 232, 176, 0); }
-  }
-
-  @keyframes priceFlashDown {
-    0%   { background-color: rgba(255, 107, 107, 0); }
-    25%  { background-color: rgba(255, 107, 107, 0.18); }
-    100% { background-color: rgba(255, 107, 107, 0); }
-  }
-
-  @keyframes tickerScroll {
-    0%   { transform: translateX(0); }
+  @keyframes ticker {
+    0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
   }
+  .animate-ticker { animation: ticker 60s linear infinite; }
 
-  @keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 6px rgba(62, 232, 176, 0.4); }
-    50%       { box-shadow: 0 0 18px rgba(62, 232, 176, 0.8); }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in { animation: fade-in 0.4s ease-out; }
+
+  /* Signature aura halos for hero panels */
+  .aura-crypto { background: radial-gradient(ellipse at top left, hsl(190 95% 55% / 0.22), transparent 60%); }
+  .aura-forex  { background: radial-gradient(ellipse at top left, hsl(258 90% 66% / 0.20), transparent 60%); }
+  .aura-metals { background: radial-gradient(ellipse at top left, hsl(42  95% 58% / 0.18), transparent 60%); }
+
+  /* Hairline accent on top of cards */
+  .hairline-top { position: relative; }
+  .hairline-top::before {
+    content: ""; position: absolute; left: 14px; right: 14px; top: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.10), transparent);
   }
 
-  @keyframes barGrow {
-    from { width: 0%; }
+  /* Brand wordmark gradient */
+  .brand-mark {
+    background: linear-gradient(135deg, hsl(190 95% 70%), hsl(258 90% 75%) 55%, hsl(42 95% 65%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
-  @keyframes rowSlideIn {
-    from { opacity: 0; transform: translateX(-10px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
+  /* Signal "ring" glow */
+  .signal-ring-bull { box-shadow: 0 0 0 1px hsl(var(--bull) / 0.35), 0 24px 60px -24px hsl(var(--bull) / 0.45); }
+  .signal-ring-bear { box-shadow: 0 0 0 1px hsl(var(--bear) / 0.35), 0 24px 60px -24px hsl(var(--bear) / 0.45); }
 
-  @keyframes alertPop {
-    0%   { transform: scale(0.92); opacity: 0; }
-    70%  { transform: scale(1.02); }
-    100% { transform: scale(1);   opacity: 1; }
-  }
-
-  @keyframes donutDraw {
-    from { stroke-dashoffset: 440; }
-  }
-
-  /* ─── Animation Classes ─────────────────────────────── */
-
-  .animate-fade-up   { animation: fadeInUp 0.45s ease both; }
-  .animate-fade-in   { animation: fadeIn 0.35s ease both; }
-  .animate-slide-right { animation: slideInRight 0.4s ease both; }
-  .animate-slide-left  { animation: slideInLeft 0.4s ease both; }
-  .animate-scale-in  { animation: scaleIn 0.3s ease both; }
-  .animate-price-up  { animation: priceFlashUp 0.75s ease both; }
-  .animate-price-down { animation: priceFlashDown 0.75s ease both; }
-  .animate-row-in    { animation: rowSlideIn 0.3s ease both; }
-  .animate-bar-grow  { animation: barGrow 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-  .animate-pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
-  .animate-alert-pop  { animation: alertPop 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-  .animate-donut-draw { animation: donutDraw 1.2s cubic-bezier(0.4, 0, 0.2, 1) both; }
-
-  /* Stagger delay helpers */
-  .delay-75  { animation-delay: 75ms; }
-  .delay-150 { animation-delay: 150ms; }
-  .delay-225 { animation-delay: 225ms; }
-  .delay-300 { animation-delay: 300ms; }
-  .delay-375 { animation-delay: 375ms; }
-  .delay-450 { animation-delay: 450ms; }
-  .delay-525 { animation-delay: 525ms; }
-  .delay-600 { animation-delay: 600ms; }
-
-  /* ─── Ticker Strip ──────────────────────────────────── */
-
-  .ticker-track {
-    display: flex;
-    width: max-content;
-    animation: tickerScroll 28s linear infinite;
-  }
-
-  .ticker-track:hover {
-    animation-play-state: paused;
-  }
-
-  /* ─── Custom Scrollbar ──────────────────────────────── */
-
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: var(--app-terminal-border);
-    border-radius: 99px;
-  }
-  ::-webkit-scrollbar-thumb:hover { background: var(--app-terminal-muted); }
-
-  /* ─── Page entry ────────────────────────────────────── */
-
-  .page-enter { animation: fadeInUp 0.4s ease both; }
-
-  /* ─── Donut segment hover ───────────────────────────── */
-
-  .donut-segment {
-    transition: stroke-width 0.2s ease, opacity 0.2s ease;
-    cursor: pointer;
-  }
-  .donut-segment:hover { stroke-width: 22px; }
+  /* Number tabular tracking */
+  .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 }
