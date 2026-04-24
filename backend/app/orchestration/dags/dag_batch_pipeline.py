@@ -10,7 +10,7 @@ with DAG(
     dag_id="market_batch_pipeline",
     default_args=DEFAULT_DAG_ARGS,
     description="Batch pipeline for Bronze -> Silver -> Gold",
-    schedule_interval="@daily",
+    schedule_interval="@hourly",
     start_date=datetime(2026, 4, 15) ,
     catchup=False,
     tags=["market", "batch", "lakehouse"],

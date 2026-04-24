@@ -28,7 +28,7 @@ from app.etl.bronze.write_bronze import write_bronze_table  # ✅ ADDED
 class CoinGeckoIngestor(BaseIngestor):
     """Ingestor for CoinGecko crypto prices with historical data support"""
 
-    def __init__(self, days: int = 30*12) -> None:
+    def __init__(self, days: int = 30*12*1.5) -> None:
         """
         Initialize CoinGecko ingestor.
         

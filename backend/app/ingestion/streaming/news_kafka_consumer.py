@@ -50,8 +50,8 @@ _sentiment = SentimentAnalyzer()
 # Tuning
 # ---------------------------------------------------------------------------
 
-FLUSH_BATCH_SIZE       = 50
-FLUSH_INTERVAL_SECONDS = 60
+FLUSH_BATCH_SIZE       = 5
+FLUSH_INTERVAL_SECONDS = 15
 
 GROUP_NEWS_STREAM = "news-stream-consumer"
 
