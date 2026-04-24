@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { AssetImage } from "@/components/AssetImage";
 import { ASSETS } from "@/lib/market-data";
 import { Sparkline } from "@/components/terminal/Sparkline";
 import { Search, ArrowRight } from "lucide-react";
@@ -64,10 +65,13 @@ const Markets = () => {
                   filteredAssets.map(asset => (
                     <TableRow key={asset.symbol} className="border-border/40 hover:bg-surface-2/30 transition-colors">
                       <TableCell>
-                        <Link to={`/asset/${asset.symbol.replace("/", "-")}`} className="font-semibold text-foreground hover:text-primary transition-colors">
-                          {asset.symbol}
+                        <Link to={`/asset/${asset.symbol.replace("/", "-")}`} className="flex items-center gap-2 font-semibold text-foreground hover:text-primary transition-colors">
+                          <AssetImage symbol={asset.symbol} size="sm" showBorder={false} />
+                          <div>
+                            <div>{asset.symbol}</div>
+                            <div className="text-xs text-muted-foreground font-normal">{asset.name}</div>
+                          </div>
                         </Link>
-                        <div className="text-xs text-muted-foreground">{asset.name}</div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={`text-[10px] uppercase tracking-wider ${asset.class === 'crypto' ? 'text-crypto border-crypto/30 bg-crypto/5' : asset.class === 'forex' ? 'text-forex border-forex/30 bg-forex/5' : 'text-metals border-metals/30 bg-metals/5'}`}>

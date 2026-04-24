@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AssetImage } from "@/components/AssetImage";
 import { ASSETS } from "@/lib/market-data";
 import { Wallet, Plus, Trash2, PieChart } from "lucide-react";
 

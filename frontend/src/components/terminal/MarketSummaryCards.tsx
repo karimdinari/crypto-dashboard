@@ -1,6 +1,7 @@
 import { useAssets } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Bitcoin, Banknote, Coins, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { AssetImage } from "@/components/AssetImage";
 import { Sparkline } from "./Sparkline";
 
 const GROUPS = [
@@ -54,7 +55,8 @@ export const MarketSummaryCards = () => {
                 const aUp = a.changePct >= 0;
                 return (
                   <div key={a.symbol} className="flex items-center gap-3 rounded-md px-1 py-0.5 transition-colors hover:bg-surface-2/40">
-                    <span className="mono w-[64px] text-[11px] font-medium tracking-tight text-foreground/95">{a.symbol}</span>
+                    <AssetImage symbol={a.symbol} size="sm" showBorder={false} />
+                    <span className="mono w-[52px] text-[11px] font-medium tracking-tight text-foreground/95">{a.symbol}</span>
                     <div className="flex-1">
                       <Sparkline data={a.spark || []} color={aUp ? "hsl(var(--bull))" : "hsl(var(--bear))"} />
                     </div>

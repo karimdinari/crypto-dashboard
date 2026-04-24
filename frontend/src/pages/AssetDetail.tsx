@@ -4,6 +4,7 @@ import { IndicatorPanel } from "@/components/terminal/IndicatorPanel";
 import { NewsPanel } from "@/components/terminal/NewsPanel";
 import { SignalCard } from "@/components/terminal/SignalCard";
 import { SentimentPanel } from "@/components/terminal/SentimentPanel";
+import { AssetImage } from "@/components/AssetImage";
 import { ASSETS } from "@/lib/market-data";
 import { useHistory, useLatestStream } from "@/lib/api";
 import { useMemo } from "react";
@@ -26,10 +27,13 @@ const AssetDetail = () => {
   return (
     <TerminalLayout>
       <div className="space-y-4">
-        <header className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <p className="mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Asset detail</p>
-            <h1 className="text-[22px] font-semibold tracking-tight">{a.symbol} <span className="text-muted-foreground">· {a.name}</span></h1>
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex items-end gap-4">
+            <AssetImage symbol={a.symbol} name={a.name} size="lg" />
+            <div>
+              <p className="mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Asset detail</p>
+              <h1 className="text-[22px] font-semibold tracking-tight">{a.symbol} <span className="text-muted-foreground">· {a.name}</span></h1>
+            </div>
           </div>
           <div className="flex items-center gap-2 mono text-[11px] text-muted-foreground">
             <span className="rounded border border-border bg-surface px-2 py-1">Class · {a.class}</span>

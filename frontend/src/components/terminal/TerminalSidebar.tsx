@@ -10,7 +10,6 @@ const NAV = [
   { to: "/markets",       label: "Markets",       icon: LineChart,       kbd: "M" },
   { to: "/streaming",     label: "Streaming",     icon: Radio,           kbd: "S" },
   { to: "/news",          label: "News",          icon: Newspaper,       kbd: "N" },
-  { to: "/sentiment",     label: "Sentiment",     icon: Smile,           kbd: "T" },
   { to: "/correlations",  label: "Correlations",  icon: Grid3x3,         kbd: "C" },
   { to: "/history",       label: "Batch History", icon: Database,        kbd: "H" },
   { to: "/portfolio",     label: "Portfolio",     icon: Wallet,          kbd: "O" },
@@ -68,15 +67,7 @@ export const TerminalSidebar = () => {
           </li>
         </ul>
 
-        {/* Asset class legend */}
-        <div className="mt-8 rounded-md border border-sidebar-border/80 bg-sidebar-accent/30 p-3">
-          <p className="mono mb-2 text-[9px] uppercase tracking-[0.22em] text-sidebar-foreground/50">Asset universe</p>
-          <ul className="space-y-1.5 text-[11px]">
-            <li className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-crypto shadow-[0_0_8px_hsl(var(--crypto))]" /><span className="text-sidebar-accent-foreground/85">Crypto</span></span><span className="mono text-sidebar-foreground/55">2</span></li>
-            <li className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-forex shadow-[0_0_8px_hsl(var(--forex))]" /><span className="text-sidebar-accent-foreground/85">Forex</span></span><span className="mono text-sidebar-foreground/55">2</span></li>
-            <li className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-metals shadow-[0_0_8px_hsl(var(--metals))]" /><span className="text-sidebar-accent-foreground/85">Metals</span></span><span className="mono text-sidebar-foreground/55">2</span></li>
-          </ul>
-        </div>
+        
       </nav>
 
       {/* Footer status */}

@@ -1,5 +1,6 @@
 import { useAssets, useLatestStream } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { AssetImage } from "@/components/AssetImage";
 
 export const TickerTape = () => {
   const { data: assets } = useAssets();
@@ -31,11 +32,7 @@ export const TickerTape = () => {
           const isForexOrSilver = a.market === "forex" || a.symbol.startsWith("XAG");
           return (
             <div key={i} className="flex items-center gap-2 text-[12px]">
-              <span className={cn("h-1.5 w-1.5 rounded-full",
-                a.market === "crypto" && "bg-crypto",
-                a.market === "forex"  && "bg-forex",
-                a.market === "metals" && "bg-metals"
-              )} />
+              <AssetImage symbol={a.symbol} size="xxs" showBorder={false} />
               <span className="mono font-medium tracking-tight text-foreground">{a.symbol}</span>
               <span className="mono text-muted-foreground">
                 {isForexOrSilver

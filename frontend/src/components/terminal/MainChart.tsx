@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { AssetImage } from "@/components/AssetImage";
 import {
   Maximize2,
   Settings2,
@@ -226,14 +227,7 @@ export const MainChart = ({
       <div className="flex items-center gap-3 border-b border-border bg-surface/60 px-3 py-2">
         <div className="flex items-center gap-2">
           <button className="flex items-center gap-1.5 rounded-md border border-border bg-surface-2 px-2 py-1 hover:bg-surface-3">
-            <span
-              className={cn(
-                "h-1.5 w-1.5 rounded-full",
-                marketClass === "crypto" && "bg-crypto",
-                marketClass === "forex" && "bg-forex",
-                marketClass === "metals" && "bg-metals"
-              )}
-            />
+            <AssetImage symbol={symbol} size="xs" showBorder={false} />
             <span className="mono text-[12px] font-semibold tracking-tight">{symbol}</span>
             <span className="mono text-[9px] uppercase tracking-wider text-muted-foreground">
               spot
@@ -267,7 +261,7 @@ export const MainChart = ({
               onClick={() => setChartType(t.id)}
               title={t.label}
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded border transition-colors",
+                "mono rounded border px-2 py-1 text-[10px] font-medium uppercase tracking-wider transition-colors",
                 chartType === t.id
                   ? "border-primary/40 bg-primary/10 text-primary"
                   : "border-border bg-surface text-muted-foreground hover:text-foreground"
@@ -276,6 +270,7 @@ export const MainChart = ({
               <t.icon className="h-3.5 w-3.5" />
             </button>
           ))}
+          
 
           <button
             onClick={() => setOffset(0)}
@@ -331,7 +326,7 @@ export const MainChart = ({
       </div>
 
       {assets?.length ? (
-        <div className="flex flex-wrap gap-2 border-b border-border bg-surface/40 px-3 py-2">
+        <div className="flex items-center gap-2 border-b border-border bg-surface/40 px-3 py-2">
           {assets.map((asset) => {
             const active = asset.symbol.toLowerCase() === selectedSymbol?.toLowerCase();
             return (
@@ -340,12 +335,13 @@ export const MainChart = ({
                 type="button"
                 onClick={() => onAssetChange?.(asset.symbol)}
                 className={cn(
-                  "mono rounded-md border px-3 py-2 text-[11px] uppercase tracking-[0.18em] transition-colors",
+                  "flex items-center gap-1.5 mono rounded border px-2 py-1 text-[10px] font-medium uppercase tracking-wider transition-colors",
                   active
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-surface text-muted-foreground hover:border-primary hover:text-foreground"
                 )}
               >
+                <AssetImage symbol={asset.symbol} size="xxs" showBorder={false} />
                 {asset.symbol}
               </button>
             );

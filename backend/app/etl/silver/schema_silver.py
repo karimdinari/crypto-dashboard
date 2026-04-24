@@ -39,5 +39,9 @@ SILVER_NEWS_COLUMNS = [
     "url",
     "source_name",
     "source",
+    "sentiment_label",
+    "sentiment_score",
+    "sentiment_compound",
+    "sentiment_model",
     "ingestion_time",
-]   
+]

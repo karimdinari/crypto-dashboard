@@ -13,7 +13,6 @@ import Markets from "./pages/Markets.tsx";
 import Streaming from "./pages/Streaming.tsx";
 import Portfolio from "./pages/Portfolio.tsx";
 import Alerts from "./pages/Alerts.tsx";
-import Sentiment from "./pages/Sentiment.tsx";
 import History from "./pages/History.tsx";
 
 const queryClient = new QueryClient();
@@ -30,7 +29,6 @@ const App = () => (
           <Route path="/asset/:symbol" element={<AssetDetail />} />
           <Route path="/streaming" element={<Streaming />} />
           <Route path="/news" element={<News />} />
-          <Route path="/sentiment" element={<Sentiment />} />
           <Route path="/correlations" element={<Correlations />} />
           <Route path="/history" element={<History />} />
           <Route path="/portfolio" element={<Portfolio />} />
