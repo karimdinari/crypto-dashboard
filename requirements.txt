@@ -16,6 +16,11 @@ yfinance>=0.2.40,<1
 # --- Parquet ---
 pyarrow>=15,<20
 
+# --- Dashboard API (FastAPI) ---
+fastapi>=0.115,<1
+uvicorn[standard]>=0.32,<1
+pydantic>=2.9,<3
+
 # --- Sentiment (FinBERT) ---
 # Free, open-source, runs locally, no API key needed.
 # Model (~440 MB) downloads once to ~/.cache/huggingface/ on first run.

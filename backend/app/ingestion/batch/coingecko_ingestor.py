@@ -1,13 +1,21 @@
 """
 CoinGecko batch ingestor for crypto price data.
-Fetches Bitcoin and Ethereum historical prices and market data.
-Automatically writes to Bronze layer.
+
+- **Default (`historical=False`)**: current prices for each asset, one logical row
+  per calendar day (UTC midnight in `timestamp`) — for daily append to Bronze.
+- **`historical=True`**: multi-day history via `market_chart` (backfill / one-offs).
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Optional
+
+
+def _utc_calendar_midnight_iso() -> str:
+    """UTC midnight for today's date (as-of day for daily snapshots)."""
+    now = datetime.now(timezone.utc)
+    return datetime(now.year, now.month, now.day, tzinfo=timezone.utc).isoformat()
 
 import pandas as pd
 
@@ -71,6 +79,7 @@ class CoinGeckoIngestor(BaseIngestor):
                         "display_symbol": asset["display_symbol"],
                         "market_type": "crypto",
                         "source": self.source_name,
+                        "timestamp": _utc_calendar_midnight_iso(),
                         "price": price_data.get("usd"),
                         "market_cap": price_data.get("usd_market_cap"),
                         "total_volume": price_data.get("usd_24h_vol"),
@@ -185,28 +194,27 @@ class CoinGeckoIngestor(BaseIngestor):
 
         return df
 
-    def fetch(self, historical: bool = True) -> Optional[pd.DataFrame]:
+    def fetch(self, historical: bool = False) -> Optional[pd.DataFrame]:
         """
-        Fetch crypto data (current or historical).
+        Fetch crypto data (current daily snapshot or historical).
 
         Args:
-            historical: If True, fetch historical data; if False, fetch current only
+            historical: If True, multi-day history; if False, today's snapshot (append-friendly).
 
         Returns:
             DataFrame with crypto price data or None
         """
         if historical:
             return self.fetch_historical()
-        else:
-            return self.fetch_current()
+        return self.fetch_current()
 
-    def ingest_and_write(self, historical: bool = True, mode: str = "overwrite") -> bool:
+    def ingest_and_write(self, historical: bool = False, mode: str = "append") -> bool:
         """
         Fetch crypto data and write to Bronze layer.
         
         Args:
-            historical: If True, fetch historical; if False, fetch current
-            mode: Write mode - 'append' or 'overwrite'
+            historical: If True, multi-day history; if False, daily snapshot
+            mode: Write mode - 'append' (default) or 'overwrite'
             
         Returns:
             True if successful, False otherwise
@@ -248,15 +256,15 @@ class CoinGeckoIngestor(BaseIngestor):
             return False
 
 
-def ingest_coingecko(days: int = 30, historical: bool = True, write_to_bronze: bool = False, mode: str = "overwrite") -> Optional[pd.DataFrame]:
+def ingest_coingecko(days: int = 30, historical: bool = False, write_to_bronze: bool = False, mode: str = "append") -> Optional[pd.DataFrame]:
     """
     Convenience function to run CoinGecko ingestion.
 
     Args:
         days: Number of days of historical data (default: 30)
-        historical: If True, fetch historical; if False, fetch current
+        historical: If True, multi-day history; if False, daily snapshot (default)
         write_to_bronze: If True, write to Bronze layer
-        mode: Write mode - 'append' or 'overwrite'
+        mode: Write mode - 'append' (default) or 'overwrite'
 
     Returns:
         DataFrame with crypto price data
@@ -275,14 +283,14 @@ def ingest_coingecko(days: int = 30, historical: bool = True, write_to_bronze: b
 if __name__ == "__main__":
     # ✅ When run directly, fetch AND write to Bronze
     print("\n" + "="*60)
-    print("CoinGecko Historical Ingestion → Bronze Layer")
+    print("CoinGecko daily snapshot → Bronze (append)")
     print("="*60 + "\n")
     
     ingestor = CoinGeckoIngestor(days=30)
-    success = ingestor.ingest_and_write(historical=True, mode="overwrite")
+    success = ingestor.ingest_and_write(historical=False, mode="append")
 
     if success:
-        print(f"\n✅ CoinGecko Historical Ingestion Successful")
+        print(f"\n✅ CoinGecko daily snapshot written (append)")
         print(f"Data written to: lakehouse/bronze/crypto_prices/data.parquet")
         print(f"\nRun to view: python view_bronze_data.py")
     else:

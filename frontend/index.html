@@ -1,30 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
-    <script>
-      (function () {
-        try {
-          var t = localStorage.getItem('tigre-theme')
-          document.documentElement.setAttribute(
-            'data-theme',
-            t === 'light' ? 'light' : 'dark',
-          )
-        } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'dark')
-        }
-      })()
-    </script>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Market Analytics Terminal — Multi-Asset Intelligence</title>
+    <meta name="description" content="Institutional-grade real-time terminal for crypto, forex, and precious metals. Streaming pipelines, sentiment, correlations, and AI signals." />
+    <meta name="author" content="Market Analytics Terminal" />
+
+    <meta property="og:title" content="Market Analytics Terminal" />
+    <meta property="og:description" content="Real-time multi-asset intelligence powered by streaming pipelines and AI signals." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Roboto:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <title>Tigre — Multi-Market Analytics Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
