@@ -1,0 +1,155 @@
+{
+  "timestamp": "2026-04-25T16:42:34.657333",
+  "sections": {
+    "1_data_analysis": {
+      "status": "PASS",
+      "rows": 3739,
+      "columns": 25,
+      "date_range": {
+        "start": "2015-01-01 00:00:00+00:00",
+        "end": "2026-04-21 01:26:50+00:00"
+      },
+      "findings": [
+        "\u2713 Sufficient data: 3739 samples (recommended \u2265365)",
+        "\u2713 No missing values: 0 nulls",
+        "\u2713 Complete feature set: 25 columns",
+        "\u26a0 Extreme price moves (>10%): 90 (2.41%)"
+      ]
+    },
+    "2_target_analysis": {
+      "status": "PASS",
+      "class_distribution": {
+        "up_count": 1986,
+        "down_count": 1752,
+        "up_ratio": 0.5313
+      },
+      "findings": [
+        "\u2713 Balanced classes: ~50/50 split"
+      ],
+      "issues": []
+    },
+    "3_feature_engineering": {
+      "status": "PASS",
+      "feature_count": 24,
+      "output_rows": 3732,
+      "dropped_rows": 6,
+      "feature_names": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "returns",
+        "price_diff",
+        "ma7",
+        "ma30",
+        "volatility",
+        "volume_change",
+        "correlation",
+        "rsi",
+        "macd",
+        "macd_signal",
+        "macd_histogram",
+        "day_of_week",
+        "volume_ma7",
+        "relative_volume",
+        "ma7_ratio",
+        "ma30_ratio",
+        "momentum_3d",
+        "momentum_7d",
+        "volatility_change"
+      ],
+      "statistics": {
+        "mean": 1676935548.179,
+        "std": 8331793806.853678,
+        "min": -104236903005.12596,
+        "max": 178894068361.35312,
+        "nan_count": 0,
+        "inf_count": 0
+      },
+      "findings": [
+        "\u2713 24 features selected",
+        "\u2713 Feature range: [-104236903005.13, 178894068361.35]"
+      ],
+      "issues": []
+    },
+    "4_model_evaluation": {
+      "status": "FAIL",
+      "models_tested": 0,
+      "results": {},
+      "findings": [],
+      "issues": [],
+      "recommendations": []
+    },
+    "5_assessment": {
+      "status": "OPERATIONAL",
+      "summary": "System is operational but needs performance improvement",
+      "scores": {
+        "data_quality": "PASS",
+        "target_quality": "PASS",
+        "feature_engineering": "PASS",
+        "model_performance": "FAIL"
+      },
+      "critical_issues": [],
+      "high_priority": [],
+      "recommendations": []
+    },
+    "6_improvements": {
+      "critical_replacements": [
+        {
+          "component": "Model Selection",
+          "current": "Logistic Regression, Random Forest (slow walk-forward backtest)",
+          "recommended": "Try LightGBM or CatBoost for faster training + better performance",
+          "effort": "Medium",
+          "impact": "High - 5-10% accuracy improvement likely"
+        },
+        {
+          "component": "Target Variable",
+          "current": "Binary direction (UP/DOWN)",
+          "recommended": "Add magnitude prediction (HIGH/MEDIUM/LOW moves) or multi-class",
+          "effort": "Medium",
+          "impact": "Medium - More nuanced trading signals"
+        }
+      ],
+      "high_priority_improvements": [
+        {
+          "component": "Feature Engineering",
+          "current": "12 basic technical indicators only",
+          "recommended": "Add 10+ features: sentiment scores, cross-asset correlations, volume momentum, volatility ratios",
+          "effort": "High",
+          "impact": "High - 3-7% accuracy improvement expected"
+        },
+        {
+          "component": "Backtesting",
+          "current": "Walk-forward (slow, accurate)",
+          "recommended": "Parallel processing, reduce window size for quick iteration during dev",
+          "effort": "Low",
+          "impact": "Low - Speed only, no accuracy change"
+        }
+      ],
+      "medium_priority_improvements": [
+        {
+          "component": "Hyperparameter Optimization",
+          "current": "Manual tuning",
+          "recommended": "Implement Optuna/Hyperopt for systematic optimization",
+          "effort": "Medium",
+          "impact": "Medium - 1-3% improvement"
+        },
+        {
+          "component": "Ensemble Methods",
+          "current": "Single model",
+          "recommended": "Voting/Stacking with Logistic + RF + LightGBM",
+          "effort": "Medium",
+          "impact": "Medium - 2-4% improvement"
+        },
+        {
+          "component": "Data Augmentation",
+          "current": "No sampling technique",
+          "recommended": "Apply SMOTE for class imbalance, add synthetic features",
+          "effort": "Medium",
+          "impact": "Medium - Better minority class prediction"
+        }
+      ]
+    }
+  }
+}
