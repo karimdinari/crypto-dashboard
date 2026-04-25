@@ -1,26 +1,27 @@
 """
-ML Trainer v2 — Improved XGBoost BUY / SELL / HOLD Classifier
-===============================================================
-Key improvements over v1:
-  1. Adaptive ATR-based labels instead of fixed ±0.5% threshold
-  2. 50+ engineered features: Bollinger Bands, ADX proxy, multi-timeframe MAs,
-     volume profile, momentum, calendar effects, pattern detection
-  3. Ensemble: XGBoost + LightGBM + Random Forest → averaged soft votes
-  4. Optuna hyperparameter search (15 trials, ~2 min per symbol)
-  5. SMOTE inside CV folds to fix class imbalance
-  6. Feature selection: keep top 35 by XGBoost gain importance
-  7. Probability calibration via Platt scaling (Logistic Regression)
-  8. Expanding-window walk-forward CV (5 folds)
-  9. RobustScaler (handles price outliers / crashes better)
-
-Expected accuracy improvement: ~39-43% → ~55-65%
+ML Trainer v3 — News-Aware BUY / SELL / HOLD Classifier
+=========================================================
+Key additions over v2:
+  • Reads from gold/ml_dataset (market + news features joined)
+  • News sentiment features in feature set (18 new dimensions)
+  • Sentiment-aware label generation: adjusts ATR threshold when news
+    sentiment is strong (high conviction → wider threshold)
+  • Feature groups tracked separately for importance reporting
+  • All other v2 improvements retained:
+      - 50+ technical features
+      - XGBoost + LightGBM + RandomForest ensemble
+      - Optuna hyperparameter search
+      - SMOTE inside CV folds
+      - Feature selection (top-N by XGBoost gain)
+      - Probability calibration (Platt scaling)
+      - Expanding-window walk-forward CV
+      - RobustScaler
 
 Run from backend/:
     python -m app.ml.direction.trainer
-    (or wherever your ml package lives)
 
 Install extras once:
-    pip install optuna lightgbm imbalanced-learn --break-system-packages
+    pip install optuna lightgbm imbalanced-learn vaderSentiment
 """
 
 from __future__ import annotations
@@ -44,8 +45,12 @@ logger = get_logger(__name__)
 # Paths
 # ---------------------------------------------------------------------------
 
+# Primary: joined ML dataset (market + news)
+GOLD_ML_FILE     = Path(GOLD_PATH) / "ml_dataset" / "data.parquet"
+# Fallback: market-only (for backward compat)
 GOLD_MARKET_FILE = Path(GOLD_PATH) / "market_features" / "data.parquet"
-ML_MODELS_DIR    = Path(__file__).parent / "models"
+
+ML_MODELS_DIR = Path(__file__).parent / "models"
 ML_MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -53,36 +58,43 @@ ML_MODELS_DIR.mkdir(parents=True, exist_ok=True)
 # ---------------------------------------------------------------------------
 
 ATR_PERIOD          = 14
-ATR_MULTIPLIER      = 0.5        # threshold = ATR_MULTIPLIER * daily_ATR%
-MIN_ROWS_PER_SYMBOL = 120
+ATR_MULTIPLIER      = 0.5      # threshold = ATR_MULTIPLIER * daily_ATR%
+SENTIMENT_BOOST     = 0.15     # widen threshold when |sentiment| > 0.3
+MIN_ROWS_PER_SYMBOL = 100
 N_WALK_FOLDS        = 5
 TEST_FRAC           = 0.20
 OPTUNA_TRIALS       = 15
-FEATURE_SELECT_TOP  = 35
+FEATURE_SELECT_TOP  = 40       # increased from 35 – more room for news features
 
 LABEL_MAP     = {0: "SELL", 1: "HOLD", 2: "BUY"}
 LABEL_REVERSE = {"SELL": 0, "HOLD": 1, "BUY": 2}
 
-GOLD_FEATURE_COLS = [
-    "returns", "price_diff", "ma7", "ma30", "volatility",
-    "volume_change", "correlation", "rsi", "macd",
-    "macd_signal", "macd_histogram", "day_of_week",
-    "volume_ma7", "relative_volume",
-]
-
-# Columns that should NOT be used as features
+# Columns that must NOT be used as features
 _META_COLS = {
     "symbol", "display_symbol", "market_type", "source",
-    "timestamp", "ingestion_time", "silver_time",
+    "timestamp", "date", "ingestion_time", "silver_time",
     "open", "high", "low", "close", "volume",
     "label", "next_return",
-    # raw intermediates (keep derived versions below)
+    # raw BB intermediates
     "bb_upper", "bb_lower", "dm_plus", "dm_minus", "obv", "up_bar", "down_bar",
 }
 
+# News feature columns (for separate importance reporting)
+NEWS_FEATURE_COLS = [
+    "news_count",
+    "sentiment_score", "sentiment_positive", "sentiment_negative",
+    "sentiment_neutral", "sentiment_std", "sentiment_max", "sentiment_min",
+    "sent_ma3", "sent_ma7", "sent_trend",
+    "sent_d1", "sent_d2", "sent_accel",
+    "news_vel1", "news_ma7", "news_burst",
+    "sent_regime", "sent_overbought", "sent_oversold",
+    "sent_lag1", "sent_lag2", "sent_lag3", "sent_lag1_diff",
+    "bull_bear_ratio", "news_price_divergence",
+]
+
 
 # ===========================================================================
-# FEATURE ENGINEERING
+# TECHNICAL FEATURE ENGINEERING
 # ===========================================================================
 
 def _zscore(series: pd.Series, window: int) -> pd.Series:
@@ -91,10 +103,9 @@ def _zscore(series: pd.Series, window: int) -> pd.Series:
     return (series - mu) / std
 
 
-def add_all_features(df: pd.DataFrame) -> pd.DataFrame:
+def add_technical_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Add 50+ derived features to a per-symbol Gold dataframe.
-
+    Add 50+ derived technical features to a per-symbol Gold dataframe.
     Groups:
       A. Price / MA ratios & slopes
       B. RSI + MACD momentum
@@ -113,7 +124,7 @@ def add_all_features(df: pd.DataFrame) -> pd.DataFrame:
     eps = 1e-9
     c   = df["close"]
 
-    # ---- A: MA ratios & slopes -------------------------------------------
+    # ---- A: MA ratios & slopes ------------------------------------------
     df["ma14"]           = c.rolling(14, min_periods=1).mean()
     df["ma60"]           = c.rolling(60, min_periods=1).mean()
     df["price_vs_ma7"]   = c / (df["ma7"]  + eps) - 1
@@ -125,7 +136,7 @@ def add_all_features(df: pd.DataFrame) -> pd.DataFrame:
     df["ma7_slope"]      = df["ma7"].pct_change(3)
     df["ma30_slope"]     = df["ma30"].pct_change(5)
 
-    # ---- B: RSI & MACD momentum ------------------------------------------
+    # ---- B: RSI & MACD momentum -----------------------------------------
     df["rsi_zone"]       = pd.cut(df["rsi"],
                                    bins=[0, 30, 45, 55, 70, 100],
                                    labels=[0, 1, 2, 3, 4]).astype(float)
@@ -137,13 +148,13 @@ def add_all_features(df: pd.DataFrame) -> pd.DataFrame:
     df["macd_hist_d1"]   = df["macd_histogram"].diff(1)
     df["macd_hist_d2"]   = df["macd_histogram"].diff(2)
 
-    # ---- C: Stochastic ---------------------------------------------------
+    # ---- C: Stochastic --------------------------------------------------
     lo14 = c.rolling(14, min_periods=1).min()
     hi14 = c.rolling(14, min_periods=1).max()
     df["stoch_k"]        = (c - lo14) / (hi14 - lo14 + eps)
     df["stoch_k_lag1"]   = df["stoch_k"].shift(1)
 
-    # ---- D: Volatility regime --------------------------------------------
+    # ---- D: Volatility regime -------------------------------------------
     df["vol_zscore"]     = _zscore(df["returns"], 7)
     df["vol_ratio"]      = (df["volatility"].rolling(5, min_periods=1).mean() /
                             (df["volatility"].rolling(20, min_periods=1).mean() + eps))
@@ -151,11 +162,10 @@ def add_all_features(df: pd.DataFrame) -> pd.DataFrame:
     q25 = df["volatility"].rolling(30, min_periods=3).quantile(0.25)
     df["high_vol"]       = (df["volatility"] > q75).astype(int)
     df["low_vol"]        = (df["volatility"] < q25).astype(int)
-
     df["atr_pct"]        = c * df["returns"].abs().rolling(ATR_PERIOD, min_periods=1).mean() / (c + eps)
     df["close_vs_atr"]   = c.diff(1) / (df["atr_pct"] * c + eps)
 
-    # ---- E: Bollinger Bands ----------------------------------------------
+    # ---- E: Bollinger Bands ---------------------------------------------
     bb_m   = c.rolling(20, min_periods=1).mean()
     bb_std = c.rolling(20, min_periods=1).std().fillna(eps)
     df["bb_upper"]       = bb_m + 2 * bb_std
@@ -165,38 +175,40 @@ def add_all_features(df: pd.DataFrame) -> pd.DataFrame:
     df["bb_squeeze"]     = (df["bb_width"] <
                             df["bb_width"].rolling(50, min_periods=5).quantile(0.2)).astype(int)
 
-    # ---- F: ADX proxy (trend strength) -----------------------------------
+    # ---- F: ADX proxy ---------------------------------------------------
     delta            = c.diff(1).fillna(0)
     dm_p             = delta.clip(lower=0).rolling(14, min_periods=1).mean()
     dm_m             = (-delta).clip(lower=0).rolling(14, min_periods=1).mean()
     df["adx_proxy"]  = (dm_p - dm_m).abs() / (dm_p + dm_m + eps)
     df["trending"]   = (df["adx_proxy"] > 0.2).astype(int)
 
-    # ---- G: Volume -------------------------------------------------------
-    df["vol_z14"]        = _zscore(df["relative_volume"], 14)
-    df["obv_slope"]      = (np.sign(c.diff(1)) * df.get("volume_ma7", pd.Series(0, index=df.index))).rolling(5, min_periods=1).sum()
+    # ---- G: Volume ------------------------------------------------------
+    df["vol_z14"]    = _zscore(df["relative_volume"], 14)
+    df["obv_slope"]  = (np.sign(c.diff(1)) *
+                        df.get("volume_ma7", pd.Series(0, index=df.index))
+                        ).rolling(5, min_periods=1).sum()
 
-    # ---- H: Lag returns + indicator lags ---------------------------------
+    # ---- H: Lag returns + indicator lags --------------------------------
     for lag in range(1, 8):
         df[f"ret_lag{lag}"] = df["returns"].shift(lag)
     for lag in [1, 3, 5]:
         df[f"rsi_lag{lag}"] = df["rsi"].shift(lag)
         df[f"vol_lag{lag}"] = df["volatility"].shift(lag)
 
-    # ---- I: Cumulative returns -------------------------------------------
+    # ---- I: Cumulative returns ------------------------------------------
     df["cum_ret3"]   = c.pct_change(3)
     df["cum_ret5"]   = c.pct_change(5)
     df["cum_ret10"]  = c.pct_change(10)
     df["cum_ret20"]  = c.pct_change(20)
 
-    # ---- J: Rolling stats ------------------------------------------------
+    # ---- J: Rolling stats -----------------------------------------------
     df["skew10"]     = df["returns"].rolling(10, min_periods=3).skew().fillna(0)
     df["kurt10"]     = df["returns"].rolling(10, min_periods=4).kurt().fillna(0)
     df["max_ret5"]   = df["returns"].rolling(5, min_periods=1).max()
     df["min_ret5"]   = df["returns"].rolling(5, min_periods=1).min()
     df["range_r"]    = (df["max_ret5"] - df["min_ret5"]) / (df["volatility"] + eps)
 
-    # ---- K: Calendar -----------------------------------------------------
+    # ---- K: Calendar ----------------------------------------------------
     if "timestamp" in df.columns:
         ts = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
         df["month"]      = ts.dt.month
@@ -208,7 +220,7 @@ def add_all_features(df: pd.DataFrame) -> pd.DataFrame:
         for col in ["month", "weekofyr", "is_monend", "is_monday", "is_friday"]:
             df[col] = 0
 
-    # ---- L: Bar patterns -------------------------------------------------
+    # ---- L: Bar patterns ------------------------------------------------
     df["up_bar"]     = (c > c.shift(1)).astype(int)
     df["consec_up"]  = df["up_bar"].rolling(3, min_periods=1).sum()
     df["consec_dn"]  = (1 - df["up_bar"]).rolling(3, min_periods=1).sum()
@@ -217,27 +229,45 @@ def add_all_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def add_all_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Entry point: add technical features (news features pre-joined in gold dataset)."""
+    return add_technical_features(df)
+
+
 def get_feature_names(df: pd.DataFrame) -> list[str]:
-    return [c for c in df.columns
-            if c not in _META_COLS and pd.api.types.is_numeric_dtype(df[c])]
+    return [col for col in df.columns
+            if col not in _META_COLS and pd.api.types.is_numeric_dtype(df[col])]
 
 
 # ===========================================================================
-# ADAPTIVE LABELS
+# ADAPTIVE LABELS  (news-aware)
 # ===========================================================================
 
 def make_labels(df: pd.DataFrame) -> pd.DataFrame:
     """
     ATR-based adaptive threshold labels.
-    threshold_t = ATR_MULTIPLIER * daily_ATR%   (clamped 0.3% – 3%)
+    threshold_t = ATR_MULTIPLIER * daily_ATR%  (clamped 0.3% – 3%)
+
+    When news sentiment is strongly bullish (>0.3) or bearish (<-0.3),
+    the threshold is tightened by SENTIMENT_BOOST to encourage more
+    BUY/SELL signals on high-conviction news days.
     """
     df = df.copy()
     atr = df["close"] * df["returns"].abs().rolling(ATR_PERIOD, min_periods=1).mean()
-    threshold = (ATR_MULTIPLIER * atr / (df["close"] + 1e-9)).clip(0.003, 0.03)
+    base_thresh = (ATR_MULTIPLIER * atr / (df["close"] + 1e-9)).clip(0.003, 0.03)
+
+    # Sentiment adjustment: high-conviction news → narrower threshold (more BUY/SELL)
+    if "sentiment_score" in df.columns:
+        strong_sent = df["sentiment_score"].abs() > 0.3
+        adj = base_thresh * np.where(strong_sent, (1 - SENTIMENT_BOOST), 1.0)
+        threshold = pd.Series(adj, index=df.index)
+    else:
+        threshold = base_thresh
+
     nxt = df["close"].pct_change().shift(-1)
     df["label"] = np.where(nxt > threshold, 2,
                     np.where(nxt < -threshold, 0, 1)).astype(int)
-    return df[:-1]    # drop last row (no future return)
+    return df[:-1]   # drop last row (no future return)
 
 
 # ===========================================================================
@@ -329,7 +359,7 @@ def default_xgb_params() -> dict[str, Any]:
 
 
 # ===========================================================================
-# WALK-FORWARD CV (expanding window)
+# WALK-FORWARD CV
 # ===========================================================================
 
 def walk_forward_cv(X: np.ndarray, y: np.ndarray,
@@ -458,10 +488,10 @@ def train_symbol(symbol: str, df: pd.DataFrame) -> dict[str, Any] | None:
         logger.error(f"Missing dependency: {e}")
         return None
 
-    logger.info(f"[{symbol}] ── v2 training pipeline ──")
+    logger.info(f"[{symbol}] ── v3 training pipeline (news-aware) ──")
 
-    # 1. Feature engineering
-    df = add_all_features(df)
+    # 1. Technical feature engineering
+    df = add_technical_features(df)
     df = make_labels(df)
 
     feat_names = get_feature_names(df)
@@ -477,6 +507,10 @@ def train_symbol(symbol: str, df: pd.DataFrame) -> dict[str, Any] | None:
     dist = {LABEL_MAP[c]: int((y == c).sum()) for c in range(3)}
     logger.info(f"[{symbol}] Labels: {dist}")
 
+    # Track which features are news-related
+    news_feat_in_data = [f for f in feat_names if f in NEWS_FEATURE_COLS]
+    logger.info(f"[{symbol}] News features included: {len(news_feat_in_data)}")
+
     # 2. Temporal split
     n          = len(X)
     train_end  = int(n * (1 - TEST_FRAC))
@@ -486,17 +520,16 @@ def train_symbol(symbol: str, df: pd.DataFrame) -> dict[str, Any] | None:
     Xcal, ycal = X[cal_start:train_end], y[cal_start:train_end]
 
     # 3. Scale (RobustScaler handles fat-tailed crypto distributions)
-    scaler = RobustScaler()
-    Xtr_s  = scaler.fit_transform(Xtr)
-    Xte_s  = scaler.transform(Xte)
-    Xcal_s = scaler.transform(Xcal)
+    scaler  = RobustScaler()
+    Xtr_s   = scaler.fit_transform(Xtr)
+    Xte_s   = scaler.transform(Xte)
+    Xcal_s  = scaler.transform(Xcal)
 
     # 4. Optuna search
     logger.info(f"[{symbol}] Optuna ({OPTUNA_TRIALS} trials)…")
     params = optuna_search(Xtr_s, ytr, n_trials=OPTUNA_TRIALS)
 
     # 5. Feature selection (first-pass XGB)
-    from xgboost import XGBClassifier
     Xr, yr = smote_resample(Xtr_s, ytr)
     fp = XGBClassifier(**params)
     fp.fit(Xr, yr, sample_weight=sample_weights(yr), verbose=False)
@@ -504,6 +537,10 @@ def train_symbol(symbol: str, df: pd.DataFrame) -> dict[str, Any] | None:
     sel    = ranked[:FEATURE_SELECT_TOP].tolist()
     sel_names = [feat_names[i] for i in sel]
     logger.info(f"[{symbol}] Selected {len(sel)} features. Top5: {sel_names[:5]}")
+
+    # Track how many news features survived selection
+    news_selected = [n for n in sel_names if n in NEWS_FEATURE_COLS]
+    logger.info(f"[{symbol}] News features in top-{FEATURE_SELECT_TOP}: {len(news_selected)} — {news_selected}")
 
     Xtr_sel  = Xtr_s[:,  sel]
     Xte_sel  = Xte_s[:,  sel]
@@ -520,19 +557,21 @@ def train_symbol(symbol: str, df: pd.DataFrame) -> dict[str, Any] | None:
     cal = calibrate(estimators, Xcal_sel, ycal)
 
     # 9. Evaluate
-    raw_p = ensemble_proba(estimators, Xte_sel)
+    raw_p   = ensemble_proba(estimators, Xte_sel)
     final_p = cal.predict_proba(raw_p) if cal is not None else raw_p
-    preds = np.argmax(final_p, axis=1)
-    acc   = accuracy_score(yte, preds)
-    f1    = f1_score(yte, preds, average="macro", zero_division=0)
-    report = classification_report(yte, preds,
-                                    target_names=["SELL","HOLD","BUY"],
-                                    output_dict=True, zero_division=0)
+    preds   = np.argmax(final_p, axis=1)
+    acc     = accuracy_score(yte, preds)
+    f1      = f1_score(yte, preds, average="macro", zero_division=0)
+    report  = classification_report(yte, preds,
+                                     target_names=["SELL", "HOLD", "BUY"],
+                                     output_dict=True, zero_division=0)
 
-    logger.info(f"[{symbol}] acc={acc:.4f}  f1={f1:.4f}  "
-                f"(cv_acc={cv.get('cv_accuracy',0):.4f}  cv_f1={cv.get('cv_f1_macro',0):.4f})")
+    logger.info(
+        f"[{symbol}] acc={acc:.4f}  f1={f1:.4f}  "
+        f"(cv_acc={cv.get('cv_accuracy', 0):.4f}  cv_f1={cv.get('cv_f1_macro', 0):.4f})"
+    )
 
-    # ---- Feature importances (from primary XGB) --------------------------
+    # ---- Feature importances (from primary XGB) -------------------------
     primary_xgb = next(m for nm, m in estimators if nm == "xgb")
     all_imp = np.zeros(len(feat_names))
     for local_i, global_i in enumerate(sel):
@@ -540,17 +579,22 @@ def train_symbol(symbol: str, df: pd.DataFrame) -> dict[str, Any] | None:
     feat_imp = sorted(zip(feat_names, all_imp.tolist()),
                       key=lambda x: x[1], reverse=True)[:15]
 
-    # ---- Save artifacts --------------------------------------------------
+    # News feature importances separately
+    news_imp = [(n, w) for n, w in zip(feat_names, all_imp.tolist())
+                if n in NEWS_FEATURE_COLS]
+    news_imp.sort(key=lambda x: x[1], reverse=True)
+
+    # ---- Save artifacts -------------------------------------------------
     safe = symbol.replace("/", "_")
 
     primary_xgb.save_model(str(ML_MODELS_DIR / f"{safe}_model.json"))
 
     (ML_MODELS_DIR / f"{safe}_scaler.json").write_text(json.dumps({
         "type": "robust",
-        "center_":       scaler.center_.tolist(),
-        "scale_":        scaler.scale_.tolist(),
-        "feature_names": feat_names,
-        "selected_idx":  sel,
+        "center_":        scaler.center_.tolist(),
+        "scale_":         scaler.scale_.tolist(),
+        "feature_names":  feat_names,
+        "selected_idx":   sel,
         "selected_names": sel_names,
     }))
 
@@ -585,22 +629,25 @@ def train_symbol(symbol: str, df: pd.DataFrame) -> dict[str, Any] | None:
                 pass
 
     meta = {
-        "symbol": symbol,
-        "model_version": "xgb-v2.0-ensemble",
-        "n_train": int(len(Xtr)),
-        "n_test":  int(len(Xte)),
-        "n_features_total": len(feat_names),
-        "n_features_selected": len(sel_names),
-        "features": sel_names,
-        "all_features": feat_names,
-        "label_map": LABEL_MAP,
-        "test_accuracy": round(acc, 4),
-        "test_f1_macro":  round(f1, 4),
-        "cv_metrics": cv,
+        "symbol":               symbol,
+        "model_version":        "xgb-v3.0-ensemble-news",
+        "n_train":              int(len(Xtr)),
+        "n_test":               int(len(Xte)),
+        "n_features_total":     len(feat_names),
+        "n_features_selected":  len(sel_names),
+        "features":             sel_names,
+        "all_features":         feat_names,
+        "news_features_available": news_feat_in_data,
+        "news_features_selected":  news_selected,
+        "label_map":            LABEL_MAP,
+        "test_accuracy":        round(acc, 4),
+        "test_f1_macro":        round(f1, 4),
+        "cv_metrics":           cv,
         "classification_report": report,
-        "feature_importances": feat_imp,
-        "label_distribution": dist,
-        "ensemble_types": [nm for nm, _ in estimators],
+        "feature_importances":  feat_imp,
+        "news_feature_importances": news_imp,
+        "label_distribution":   dist,
+        "ensemble_types":       [nm for nm, _ in estimators],
     }
     (ML_MODELS_DIR / f"{safe}_meta.json").write_text(json.dumps(meta, indent=2))
     return meta
@@ -610,12 +657,29 @@ def train_symbol(symbol: str, df: pd.DataFrame) -> dict[str, Any] | None:
 # TRAIN ALL CRYPTO
 # ===========================================================================
 
-def train_all_crypto(gold_path: Path = GOLD_MARKET_FILE) -> dict[str, Any]:
-    if not gold_path.exists():
-        raise FileNotFoundError(
-            f"Gold features not found: {gold_path}\n"
-            "Run: python -m app.etl.gold.build_gold_market"
-        )
+def train_all_crypto(gold_path: Path | None = None) -> dict[str, Any]:
+    """
+    Train per-symbol classifiers on the Gold ML dataset (market + news).
+    Falls back to market-only Gold data if ml_dataset not built yet.
+    """
+    # Resolve path
+    if gold_path is None:
+        if GOLD_ML_FILE.exists():
+            gold_path = GOLD_ML_FILE
+            logger.info("Using Gold ML dataset (market + news features)")
+        elif GOLD_MARKET_FILE.exists():
+            gold_path = GOLD_MARKET_FILE
+            logger.warning(
+                "Gold ML dataset not found — using market-only features. "
+                "Run: python -m app.etl.gold.build_gold_ml_dataset"
+            )
+        else:
+            raise FileNotFoundError(
+                f"No Gold data found.\n"
+                f"  Market: {GOLD_MARKET_FILE}\n"
+                f"  ML dataset: {GOLD_ML_FILE}\n"
+                "Run the gold layer ETL first."
+            )
 
     logger.info("Loading Gold features", extra={"path": str(gold_path)})
     df = pd.read_parquet(gold_path)
@@ -632,18 +696,20 @@ def train_all_crypto(gold_path: Path = GOLD_MARKET_FILE) -> dict[str, Any]:
         results[sym] = meta if meta else {"error": "training failed"}
 
     summary = {
-        "trained_at": pd.Timestamp.now(tz="UTC").isoformat(),
-        "trainer_version": "v2.0",
-        "symbols": list(results.keys()),
+        "trained_at":       pd.Timestamp.now(tz="UTC").isoformat(),
+        "trainer_version":  "v3.0-news-aware",
+        "gold_path":        str(gold_path),
+        "symbols":          list(results.keys()),
         "results": {
             k: {
-                "accuracy":   v.get("test_accuracy"),
-                "f1_macro":   v.get("test_f1_macro"),
-                "cv_accuracy": (v.get("cv_metrics") or {}).get("cv_accuracy"),
-                "cv_f1":      (v.get("cv_metrics") or {}).get("cv_f1_macro"),
-                "n_features": v.get("n_features_selected"),
-                "ensemble":   v.get("ensemble_types"),
-                "error":      v.get("error"),
+                "accuracy":          v.get("test_accuracy"),
+                "f1_macro":          v.get("test_f1_macro"),
+                "cv_accuracy":       (v.get("cv_metrics") or {}).get("cv_accuracy"),
+                "cv_f1":             (v.get("cv_metrics") or {}).get("cv_f1_macro"),
+                "n_features":        v.get("n_features_selected"),
+                "news_features_selected": v.get("news_features_selected"),
+                "ensemble":          v.get("ensemble_types"),
+                "error":             v.get("error"),
             }
             for k, v in results.items()
         },
@@ -659,7 +725,7 @@ def train_all_crypto(gold_path: Path = GOLD_MARKET_FILE) -> dict[str, Any]:
 
 if __name__ == "__main__":
     print("\n" + "=" * 70)
-    print("ML Trainer v2.0 — XGBoost Ensemble + Optuna + SMOTE")
+    print("ML Trainer v3.0 — News-Aware XGBoost Ensemble")
     print("=" * 70 + "\n")
 
     results = train_all_crypto()
@@ -670,13 +736,15 @@ if __name__ == "__main__":
             print(f"  ❌ {sym}: {meta['error']}")
             continue
         cv = meta.get("cv_metrics") or {}
+        news_sel = meta.get("news_features_selected") or []
         print(
             f"  ✅ {sym}:  "
             f"test_acc={meta['test_accuracy']:.3f}  "
             f"test_f1={meta['test_f1_macro']:.3f}  "
-            f"cv_acc={cv.get('cv_accuracy',0):.3f}  "
-            f"cv_f1={cv.get('cv_f1_macro',0):.3f}  "
+            f"cv_acc={cv.get('cv_accuracy', 0):.3f}  "
+            f"cv_f1={cv.get('cv_f1_macro', 0):.3f}  "
             f"features={meta['n_features_selected']}  "
+            f"news_selected={len(news_sel)}  "
             f"ensemble={meta['ensemble_types']}"
         )
 

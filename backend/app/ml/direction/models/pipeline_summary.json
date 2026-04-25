@@ -1,5 +1,6 @@
 {
-  "pipeline_ran_at": "2026-04-21T21:52:56.301546+00:00",
+  "pipeline_ran_at": "2026-04-23T22:34:41.352525+00:00",
+  "pipeline_version": "v3.0-news-aware",
   "gold_path": "C:\\Institue Isimm\\Ing2_Info\\S2\\Data Engineering\\crypto-dashboard\\backend\\lakehouse\\gold\\market_features\\data.parquet",
   "symbols": [
     "bitcoin",
@@ -8,151 +9,33 @@
   "results": {
     "bitcoin": {
       "training": {
-        "accuracy": 0.3922,
-        "f1_macro": 0.3651,
-        "n_train": 2988,
-        "n_test": 747,
-        "cv_metrics": {
-          "cv_accuracy": 0.3989,
-          "cv_f1_macro": 0.3163,
-          "n_folds": 3
-        },
-        "label_distribution": {
-          "SELL": 1081,
-          "HOLD": 605,
-          "BUY": 1302
-        },
-        "feature_importances": [
-          [
-            "volatility_lag1",
-            0.057059235870838165
-          ],
-          [
-            "volatility",
-            0.051346439868211746
-          ],
-          [
-            "day_of_week",
-            0.047748859971761703
-          ],
-          [
-            "ma7_vs_ma30",
-            0.046602945774793625
-          ],
-          [
-            "price_vs_ma30",
-            0.04565195366740227
-          ],
-          [
-            "rsi",
-            0.04425720125436783
-          ],
-          [
-            "returns",
-            0.04339631646871567
-          ],
-          [
-            "volume_ma7",
-            0.04324345663189888
-          ],
-          [
-            "price_diff",
-            0.042068541049957275
-          ],
-          [
-            "return_lag3",
-            0.04070032387971878
-          ]
-        ],
-        "error": null
+        "accuracy": null,
+        "f1_macro": null,
+        "n_train": null,
+        "n_test": null,
+        "cv_metrics": {},
+        "label_distribution": {},
+        "feature_importances": [],
+        "news_features_selected": [],
+        "news_feature_importances": [],
+        "error": "training failed"
       },
-      "backtest": {
-        "metrics": {
-          "total_return": 0.5432,
-          "cagr": 0.1576,
-          "sharpe": 0.9247,
-          "max_drawdown": -0.1739,
-          "win_rate": 0.5833,
-          "n_trades": 60,
-          "buy_and_hold_return": 2.6973,
-          "alpha": -2.1541
-        },
-        "n_oos_bars": 747
-      }
+      "backtest": null
     },
     "ethereum": {
       "training": {
-        "accuracy": 0.4261,
-        "f1_macro": 0.4081,
-        "n_train": 2813,
-        "n_test": 704,
-        "cv_metrics": {
-          "cv_accuracy": 0.4315,
-          "cv_f1_macro": 0.3518,
-          "n_folds": 3
-        },
-        "label_distribution": {
-          "SELL": 1204,
-          "HOLD": 344,
-          "BUY": 1265
-        },
-        "feature_importances": [
-          [
-            "rsi_oversold",
-            0.04525037109851837
-          ],
-          [
-            "ma30",
-            0.04307236149907112
-          ],
-          [
-            "day_of_week",
-            0.041219331324100494
-          ],
-          [
-            "returns",
-            0.04116150736808777
-          ],
-          [
-            "volume_ma7",
-            0.0410345159471035
-          ],
-          [
-            "volatility",
-            0.041008926928043365
-          ],
-          [
-            "price_vs_ma7",
-            0.04099028557538986
-          ],
-          [
-            "ma7",
-            0.040706899017095566
-          ],
-          [
-            "price_diff",
-            0.04039723798632622
-          ],
-          [
-            "rsi_lag1",
-            0.039201050996780396
-          ]
-        ],
-        "error": null
+        "accuracy": null,
+        "f1_macro": null,
+        "n_train": null,
+        "n_test": null,
+        "cv_metrics": {},
+        "label_distribution": {},
+        "feature_importances": [],
+        "news_features_selected": [],
+        "news_feature_importances": [],
+        "error": "training failed"
       },
-      "backtest": {
-        "metrics": {
-          "total_return": 2.2761,
-          "cagr": 0.5292,
-          "sharpe": 1.2317,
-          "max_drawdown": -0.3088,
-          "win_rate": 0.5826,
-          "n_trades": 115,
-          "buy_and_hold_return": 0.2422,
-          "alpha": 2.0339
-        },
-        "n_oos_bars": 704
-      }
+      "backtest": null
     }
   }
 }

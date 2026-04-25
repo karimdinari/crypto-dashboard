@@ -1,26 +1,24 @@
 """
 Feature engineering package.
-Provides 12 core + advanced features for market data.
+Provides market technical features + news sentiment features for Gold layer.
 
-Main interface:
+Market interface:
     from app.features.market_features import build_market_features
-    
-    df = build_market_features()  # Creates 12 features for ML
+    df = build_market_features()
 
-Features created:
-    CORE (7):
-        - returns, price_diff, ma7, ma30, volatility, volume_change, correlation
-    
-    ADVANCED (5):
-        - rsi, macd, day_of_week, volume_ma7, relative_volume
+News interface:
+    from app.features.news_features import build_news_features
+    news_df = build_news_features(news_df, market_df=market_df)
 """
 
-# Main builder
+# Market features
 from app.features.market_features import build_market_features
 
-# Individual feature functions (from simple_features.py)
+# News sentiment features
+from app.features.news_features import build_news_features, NEWS_FEATURE_COLUMNS
+
+# Individual market feature functions
 from app.features.simple_features import (
-    # Core features
     calculate_returns,
     calculate_price_diff,
     calculate_ma7,
@@ -28,38 +26,36 @@ from app.features.simple_features import (
     calculate_volatility,
     calculate_volume_change,
     calculate_correlation,
-    
-    # Advanced features
     calculate_rsi,
     calculate_macd,
     calculate_day_of_week,
     calculate_volume_ma7,
     calculate_relative_volume,
-    
-    # All-in-one
     add_all_features,
 )
 
 __all__ = [
-    # Main builder
-    'build_market_features',
-    
-    # Core features (7)
-    'calculate_returns',
-    'calculate_price_diff',
-    'calculate_ma7',
-    'calculate_ma30',
-    'calculate_volatility',
-    'calculate_volume_change',
-    'calculate_correlation',
-    
-    # Advanced features (5)
-    'calculate_rsi',
-    'calculate_macd',
-    'calculate_day_of_week',
-    'calculate_volume_ma7',
-    'calculate_relative_volume',
-    
+    # Main builders
+    "build_market_features",
+    "build_news_features",
+    "NEWS_FEATURE_COLUMNS",
+
+    # Core market features (7)
+    "calculate_returns",
+    "calculate_price_diff",
+    "calculate_ma7",
+    "calculate_ma30",
+    "calculate_volatility",
+    "calculate_volume_change",
+    "calculate_correlation",
+
+    # Advanced market features (5)
+    "calculate_rsi",
+    "calculate_macd",
+    "calculate_day_of_week",
+    "calculate_volume_ma7",
+    "calculate_relative_volume",
+
     # Batch function
-    'add_all_features',
-]
+    "add_all_features",
+]

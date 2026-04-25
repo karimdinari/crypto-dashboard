@@ -11,7 +11,7 @@ Strategy:
     - Position sizing: 100% of capital per trade
 
 Run from backend/:
-    python -m app.ml.backtester
+    python -m app.ml.direction.backtest
 """
 
 from __future__ import annotations
@@ -25,22 +25,22 @@ import pandas as pd
 from app.config.logging_config import get_logger
 from app.config.settings import GOLD_PATH
 from app.ml.direction.trainer import (
-    ALL_FEATURES,
     LABEL_MAP,
-    LABEL_THRESHOLD,
     ML_MODELS_DIR,
-    _add_derived_features,
-    _make_labels,
+    GOLD_ML_FILE,
+    GOLD_MARKET_FILE,
+    add_technical_features,
+    make_labels,
+    get_feature_names,
 )
 
 logger = get_logger(__name__)
 
-GOLD_MARKET_FILE = Path(GOLD_PATH) / "market_features" / "data.parquet"
 BACKTEST_RESULTS_DIR = ML_MODELS_DIR / "backtest"
 BACKTEST_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 TRANSACTION_COST = 0.001   # 0.1 % per trade
-INITIAL_CAPITAL = 10_000.0
+INITIAL_CAPITAL  = 10_000.0
 
 
 # ---------------------------------------------------------------------------
@@ -48,18 +48,25 @@ INITIAL_CAPITAL = 10_000.0
 # ---------------------------------------------------------------------------
 
 class NumpyScaler:
-    def __init__(self, mean_: list, scale_: list) -> None:
-        self.mean_ = np.array(mean_, dtype=np.float32)
-        self.scale_ = np.array(scale_, dtype=np.float32)
+    """
+    Scaler compatible with both old (mean_/scale_) and new (center_/scale_)
+    artifact formats produced by v2/v3 trainer.
+    """
+    def __init__(self, center: list, scale: list) -> None:
+        self.center_ = np.array(center, dtype=np.float32)
+        self.scale_  = np.array(scale,  dtype=np.float32)
 
     def transform(self, X: np.ndarray) -> np.ndarray:
-        return (X - self.mean_) / (self.scale_ + 1e-9)
+        return (X - self.center_) / (self.scale_ + 1e-9)
 
     @classmethod
     def from_json(cls, path: Path) -> "NumpyScaler":
         import json
         data = json.loads(path.read_text())
-        return cls(data["mean_"], data["scale_"])
+        # Support both v2 (center_) and legacy (mean_) key names
+        center = data.get("center_") or data.get("mean_", [])
+        scale  = data.get("scale_", [])
+        return cls(center, scale)
 
 
 # ---------------------------------------------------------------------------
@@ -130,14 +137,22 @@ def backtest_symbol(
         logger.warning(f"No model for {symbol}")
         return None
 
+    import json
     model = XGBClassifier()
     model.load_model(str(model_path))
     scaler = NumpyScaler.from_json(scaler_path)
 
-    # Feature engineering
-    df = _add_derived_features(df)
-    df = _make_labels(df, threshold=LABEL_THRESHOLD)
-    df = df.dropna(subset=ALL_FEATURES + ["label"]).reset_index(drop=True)
+    # Load selected feature indices from scaler artifact
+    scaler_meta = json.loads(scaler_path.read_text())
+    sel_idx  = scaler_meta.get("selected_idx",  None)
+    all_feat = scaler_meta.get("feature_names", None)
+
+    # Feature engineering (v3 API)
+    df = add_technical_features(df)
+    df = make_labels(df)
+    feat_names = all_feat if all_feat else get_feature_names(df)
+    feat_names = [f for f in feat_names if f in df.columns]
+    df = df.dropna(subset=feat_names + ["label"]).reset_index(drop=True)
 
     if len(df) < 30:
         return None
@@ -155,8 +170,11 @@ def backtest_symbol(
 
     for i in range(len(df)):
         row = df.iloc[[i]]
-        X = row[ALL_FEATURES].values.astype(np.float32)
+        X = row[feat_names].values.astype(np.float32)
         X_s = scaler.transform(X)
+        # Apply feature selection if model was trained with subset
+        if sel_idx is not None:
+            X_s = X_s[:, sel_idx]
 
         proba = model.predict_proba(X_s)[0]
         pred = int(np.argmax(proba))
@@ -248,8 +266,11 @@ def backtest_symbol(
     return result
 
 
-def backtest_all_crypto(gold_path: Path = GOLD_MARKET_FILE) -> dict[str, Any]:
+def backtest_all_crypto(gold_path: Path | None = None) -> dict[str, Any]:
     """Run backtests for all available crypto models."""
+    if gold_path is None:
+        gold_path = GOLD_ML_FILE if GOLD_ML_FILE.exists() else GOLD_MARKET_FILE
+
     if not gold_path.exists():
         raise FileNotFoundError(f"Gold features not found: {gold_path}")
 
