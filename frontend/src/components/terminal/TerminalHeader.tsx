@@ -1,7 +1,16 @@
+import { useState, useEffect } from "react";
 import { Search, Bell, RefreshCw, Command, ChevronDown, Globe2 } from "lucide-react";
 
 export const TerminalHeader = () => {
-  const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  const [now, setNow] = useState(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
   return (
     <header className="relative flex h-14 shrink-0 items-center gap-3 border-b border-border bg-surface/50 px-4 backdrop-blur-xl lg:px-6">
       {/* Mobile brand */}
@@ -27,13 +36,6 @@ export const TerminalHeader = () => {
 
       <div className="mx-3 hidden h-7 w-px bg-border md:block" />
 
-      {/* Global market session */}
-      <div className="hidden items-center gap-3 md:flex">
-        <SessionBadge label="LDN" status="open" />
-        <SessionBadge label="NY" status="open" />
-        <SessionBadge label="TKY" status="closed" />
-      </div>
-
       {/* Search */}
       <div className="ml-auto flex max-w-md flex-1 items-center">
         <div className="group relative flex w-full items-center">
@@ -50,7 +52,6 @@ export const TerminalHeader = () => {
 
       {/* Right cluster */}
       <div className="flex items-center gap-2">
-        <PipelineHealth />
         <div className="hidden items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1.5 md:flex">
           <RefreshCw className="h-3 w-3 text-muted-foreground" />
           <span className="mono text-[11px] text-muted-foreground">UTC</span>
@@ -79,16 +80,7 @@ const SessionBadge = ({ label, status }: { label: string; status: "open" | "clos
   </div>
 );
 
-const PipelineHealth = () => (
-  <div className="hidden items-center gap-1 rounded-md border border-border bg-surface px-2 py-1.5 lg:flex">
-    <Globe2 className="mr-0.5 h-3 w-3 text-muted-foreground" />
-    <span className="mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Pipelines</span>
-    <span className="mx-1 h-3 w-px bg-border" />
-    <Tier label="B" color="bg-bronze" />
-    <Tier label="S" color="bg-silver" />
-    <Tier label="G" color="bg-gold" />
-  </div>
-);
+
 
 const Tier = ({ label, color }: { label: string; color: string }) => (
   <span className={`mono inline-flex h-4 w-4 items-center justify-center rounded-sm text-[9px] font-bold text-background ${color}`}>{label}</span>
