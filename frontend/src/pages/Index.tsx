@@ -6,7 +6,6 @@ import { SignalCard } from "@/components/terminal/SignalCard";
 import { SentimentPanel } from "@/components/terminal/SentimentPanel";
 import { NewsPanel } from "@/components/terminal/NewsPanel";
 import { StreamingPanel } from "@/components/terminal/StreamingPanel";
-import { AssetImage } from "@/components/AssetImage";
 import { ASSETS } from "@/lib/market-data";
 import { useAssets, useHistory, useLatestStream } from "@/lib/api";
 import { useMemo, useState } from "react";
@@ -57,19 +56,16 @@ const Index = () => {
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
 
           <div className="relative grid grid-cols-1 gap-4 p-5 md:grid-cols-4 md:items-center">
-            <div className="md:col-span-2 flex gap-4 items-start">
-
-              <div>
-                <p className="mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">Today · multi-asset terminal</p>
-                <h1 className="mt-1.5 text-[22px] font-semibold leading-tight tracking-tight">
-                  Markets are <span className={avg >= 0 ? "text-bull" : "text-bear"}>{avg >= 0 ? "expanding" : "compressing"}</span>{" "}
-                  <span className="text-muted-foreground">across</span>{" "}
-                  <span className="brand-mark">3 asset classes</span>
-                </h1>
-                <p className="mono mt-1 text-[11px] text-muted-foreground">
-                  Bronze→Silver→Gold pipelines · Kafka streaming · NLP sentiment · ensemble predictions
-                </p>
-              </div>
+            <div className="md:col-span-2">
+              <p className="mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">Today · multi-asset terminal</p>
+              <h1 className="mt-1.5 text-[22px] font-semibold leading-tight tracking-tight">
+                Markets are <span className={avg >= 0 ? "text-bull" : "text-bear"}>{avg >= 0 ? "expanding" : "compressing"}</span>{" "}
+                <span className="text-muted-foreground">across</span>{" "}
+                <span className="brand-mark">3 asset classes</span>
+              </h1>
+              <p className="mono mt-1 text-[11px] text-muted-foreground">
+                Bronze→Silver→Gold pipelines · Kafka streaming · NLP sentiment · ensemble predictions
+              </p>
             </div>
             <HeroStat label="Breadth" value={`${breadth}/${total}`} accent="text-bull" sub="advancing" />
             <HeroStat label="Avg Δ" value={`${avg >= 0 ? "+" : ""}${avg.toFixed(2)}%`} accent={avg >= 0 ? "text-bull" : "text-bear"} sub="cross-asset" />
@@ -79,34 +75,36 @@ const Index = () => {
         {/* Hero summary cards */}
         <MarketSummaryCards />
 
-        {/* 2-Column Lower Section */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-4">
-          {/* Left Column: Chart Area */}
-          <div className="space-y-4 min-w-0">
-            <div className="h-[550px]">
-              <MainChart
-                symbol={selectedSymbol}
-                candles={historyData}
-                livePrice={latestTick?.price ?? null}
-                marketClass={currentAsset.class}
-                assets={ASSETS}
-                selectedSymbol={selectedSymbol}
-                onAssetChange={setSelectedSymbol}
-              />
-            </div>
-            <IndicatorPanel />
-          </div>
-          {/* Right Column: AI & Intel */}
-          <div className="space-y-4 xl:h-[calc(100vh-5rem)] xl:sticky xl:top-20 xl:overflow-y-auto hidden-scrollbar pr-1">
-            <SignalCard />
-            <SentimentPanel />
-            <NewsPanel selectedSymbol={selectedSymbol} />
-          </div>
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+  {/* LEFT COLUMN */}
+  <div className="min-w-0 space-y-4">
+    <div className="h-[550px]">
+      <MainChart
+        symbol={selectedSymbol}
+        candles={historyData}
+        livePrice={latestTick?.price ?? null}
+        marketClass={currentAsset.class}
+        assets={ASSETS}
+        onAssetChange ={setSelectedSymbol}
+      />
+    </div>
+    <IndicatorPanel />
+      <div className="space-y-4">
+    <StreamingPanel />
+  </div>
+  </div>
+  
 
-          <div className="space-y-4 ">
-            <StreamingPanel />
-          </div>
-        </div>
+  {/* RIGHT STICKY RAIL */}
+  <aside className="hidden xl:block xl:self-start">
+<div className="sticky top-20 h-[1084px] overflow-y-auto space-y-4 pr-1">      <SignalCard />
+      <SentimentPanel />
+      <NewsPanel selectedSymbol={selectedSymbol} />
+    </div>
+  </aside>
+
+
+</div>
 </div>
     </TerminalLayout>
   );
