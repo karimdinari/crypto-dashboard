@@ -1,5 +1,5 @@
 {
-  "trained_at": "2026-04-23T22:44:55.316001+00:00",
+  "trained_at": "2026-04-27T00:11:02.834667+00:00",
   "trainer_version": "v3.0-news-aware",
   "gold_path": "C:\\Institue Isimm\\Ing2_Info\\S2\\Data Engineering\\crypto-dashboard\\backend\\lakehouse\\gold\\ml_dataset\\data.parquet",
   "symbols": [
