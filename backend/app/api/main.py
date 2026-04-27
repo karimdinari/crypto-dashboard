@@ -15,7 +15,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import markets, news, pipeline, predictions, signals
+from app.api.routes import markets, news, pipeline, predictions, signals , correlation
 from app.api.routes.article_reader import router as reader_router
 
 
@@ -39,6 +39,7 @@ app.include_router(pipeline.router, prefix="/api", tags=["pipeline"])
 app.include_router(predictions.router, prefix="/api", tags=["predictions"])
 app.include_router(signals.router, prefix="/api", tags=["signals"])
 app.include_router(reader_router, prefix="/api", tags=["reader"])
+app.include_router(correlation.router, prefix="/api", tags=["correlation"])
 
 
 @app.get("/healthz")

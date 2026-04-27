@@ -72,6 +72,11 @@ export interface OHLCVOut {
   c: number;
   v: number;
 }
+export interface CorrelationPair {
+  symbol_1:          string;
+  symbol_2:          string;
+  correlation_value: number;
+}
 
 // Fetchers
 const fetchAssets = async (): Promise<AssetOut[]> => {
@@ -123,6 +128,11 @@ const fetchHistory = async (symbol: string): Promise<OHLCVOut[]> => {
   if (!res.ok) throw new Error("Failed to fetch history");
   return res.json();
 };
+const fetchCorrelations = async (): Promise<CorrelationPair[]> => {
+  const res = await fetch(`${API_BASE_URL}/correlations`);
+  if (!res.ok) throw new Error("Failed to fetch correlations");
+  return res.json();
+};
 
 // React Query Hooks
 export const useAssets = () => useQuery({ queryKey: ["assets"], queryFn: fetchAssets });
@@ -133,3 +143,4 @@ export const useNewsHistory = (symbol: string) => useQuery({ queryKey: ["newsHis
 export const useSignals = () => useQuery({ queryKey: ["signals"], queryFn: fetchSignals });
 export const usePipeline = () => useQuery({ queryKey: ["pipeline"], queryFn: fetchPipeline });
 export const useHistory = (symbol: string) => useQuery({ queryKey: ["history", symbol], queryFn: () => fetchHistory(symbol) });
+export const useCorrelations = () => useQuery({ queryKey: ["correlations"], queryFn: fetchCorrelations });

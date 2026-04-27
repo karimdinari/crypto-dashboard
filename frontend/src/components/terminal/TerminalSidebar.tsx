@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/",              label: "Dashboard",     icon: LayoutDashboard, kbd: "D" },
-  { to: "/markets",       label: "Markets",       icon: LineChart,       kbd: "M" },
   { to: "/streaming",     label: "Streaming",     icon: Radio,           kbd: "S" },
   { to: "/news",          label: "News",          icon: Newspaper,       kbd: "N" },
   { to: "/correlations",  label: "Correlations",  icon: Grid3x3,         kbd: "C" },
