@@ -32,6 +32,7 @@ type Tab = "streaming" | "historical";
 
 type NewsItem = {
   id: string;
+  uiKey: string;
   source: string;
   badge: string;
   time: string;
@@ -91,14 +92,20 @@ const News = () => {
   const [muted, setMuted] = useState(true);
   const [selected, setSelected] = useState<NewsItem | null>(null);
   const [feed, setFeed] = useState<NewsItem[]>([]);
-   const [readerUrl, setReaderUrl] = useState<string | null>(null);
+  const [readerUrl, setReaderUrl] = useState<string | null>(null);
  
 
 
   // Transform API news data to NewsItem format
-  const transformedNews = useMemo(() => {
-    return newsData.map((n) => ({
+const transformedNews = useMemo(() => {
+  return newsData.map((n, index) => {
+    const publishedAt = n.publishedAt || "";
+    const symbolPart = (n.symbols || []).join("-");
+    const sourcePart = n.source || "unknown";
+
+    return {
       id: n.id,
+      uiKey: `${n.id}-${publishedAt}-${symbolPart}-${sourcePart}-${index}`,
       source: n.source,
       badge: n.source.slice(0, 3).toUpperCase(),
       title: n.headline,
@@ -112,8 +119,9 @@ const News = () => {
         minute: "2-digit",
       }),
       arrivedAt: new Date(n.publishedAt).getTime(),
-    }));
-  }, [newsData]);
+    };
+  });
+}, [newsData]);
 
   // Populate feed on load
   useEffect(() => {
@@ -442,7 +450,7 @@ const StreamingView = ({
               : "bg-muted text-muted-foreground border-border";
             return (
               <li
-                key={n.id}
+                key={n.uiKey}
                 onClick={() => onSelect(n)}
                 className={cn(
                   "group relative cursor-pointer px-4 py-3 transition-colors hover:bg-surface-2/40",
@@ -644,7 +652,7 @@ const HistoricalView = ({
               {slice.map((n) => {
                 const sent = n.sentiment > 0.2 ? "text-bull" : n.sentiment < -0.2 ? "text-bear" : "text-muted-foreground";
                 return (
-                  <tr key={n.id} className="border-t border-border/50 transition-colors hover:bg-surface-2/40">
+                  <tr key={n.uiKey} className="border-t border-border/50 transition-colors hover:bg-surface-2/40">
                     <td className="px-4 py-2 text-muted-foreground">{n.time}</td>
                     <td className="px-2 py-2">
                       <span className="rounded border border-border bg-surface px-1.5 py-0.5 text-[9px] font-bold uppercase">

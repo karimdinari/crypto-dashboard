@@ -5,6 +5,7 @@ import { IndicatorPanel } from "@/components/terminal/IndicatorPanel";
 import { SignalCard } from "@/components/terminal/SignalCard";
 import { SentimentPanel } from "@/components/terminal/SentimentPanel";
 import { NewsPanel } from "@/components/terminal/NewsPanel";
+import { ArticleReader } from "@/components/terminal/ArticaleReader";
 import { StreamingPanel } from "@/components/terminal/StreamingPanel";
 import { ASSETS } from "@/lib/market-data";
 import { useAssets, useHistory, useLatestStream } from "@/lib/api";
@@ -18,6 +19,9 @@ const Index = () => {
   // Use BTC/USD as the default asset for the home page chart
   const defaultSymbol = ASSETS.find((a) => a.symbol === "BTC/USD")?.symbol ?? ASSETS[0].symbol;
   const [selectedSymbol, setSelectedSymbol] = useState(defaultSymbol);
+  const [readerUrl, setReaderUrl] = useState<string | null>(null);
+  const [readerTitle, setReaderTitle] = useState<string>("");
+  const [readerSource, setReaderSource] = useState<string>("");
   const currentAsset = ASSETS.find((a) => a.symbol === selectedSymbol) ?? ASSETS[0];
 
   const { data: historyData = [] } = useHistory(selectedSymbol);
@@ -99,13 +103,28 @@ const Index = () => {
   <aside className="hidden xl:block xl:self-start">
 <div className="sticky top-20 h-[1084px] overflow-y-auto space-y-4 pr-1">      <SignalCard />
       <SentimentPanel />
-      <NewsPanel selectedSymbol={selectedSymbol} />
+      <NewsPanel 
+        selectedSymbol={selectedSymbol}
+        onArticleClick={(url, title, source) => {
+          setReaderUrl(url);
+          setReaderTitle(title);
+          setReaderSource(source);
+        }}
+      />
     </div>
   </aside>
 
 
 </div>
 </div>
+      {readerUrl && (
+        <ArticleReader
+          url={readerUrl}
+          title={readerTitle}
+          source={readerSource}
+          onClose={() => setReaderUrl(null)}
+        />
+      )}
     </TerminalLayout>
   );
 };

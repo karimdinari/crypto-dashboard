@@ -2,7 +2,7 @@ import { useNews,useNewsHistory } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
 
-export const NewsPanel = ({ selectedSymbol }: { selectedSymbol?: string }) => {
+export const NewsPanel = ({ selectedSymbol, onArticleClick }: { selectedSymbol?: string; onArticleClick?: (url: string, title: string, source: string) => void }) => {
   const { data: news } = useNews(20);
   const { data: newsHistory } = useNewsHistory(selectedSymbol || "BTCUSD");
 
@@ -29,7 +29,13 @@ export const NewsPanel = ({ selectedSymbol }: { selectedSymbol?: string }) => {
             "bg-muted text-muted-foreground";
           return (
             <li key={n.id} className="group cursor-pointer px-4 py-3 transition-colors hover:bg-surface-2/40"
-                onClick={() => window.open(n.url, '_blank')}>
+                onClick={() => {
+                  if (onArticleClick) {
+                    onArticleClick(n.url, n.headline, n.source);
+                  } else {
+                    window.open(n.url, '_blank');
+                  }
+                }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="mono inline-flex h-5 items-center rounded border border-border bg-surface px-1.5 text-[9px] font-bold uppercase tracking-wider text-foreground">
