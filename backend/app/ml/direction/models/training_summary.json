@@ -1,0 +1,39 @@
+{
+  "trained_at": "2026-04-27T00:11:02.834667+00:00",
+  "trainer_version": "v3.0-news-aware",
+  "gold_path": "C:\\Institue Isimm\\Ing2_Info\\S2\\Data Engineering\\crypto-dashboard\\backend\\lakehouse\\gold\\ml_dataset\\data.parquet",
+  "symbols": [
+    "bitcoin",
+    "ethereum"
+  ],
+  "results": {
+    "bitcoin": {
+      "accuracy": 0.3723,
+      "f1_macro": 0.3686,
+      "cv_accuracy": 0.3697,
+      "cv_f1": 0.3599,
+      "n_features": 40,
+      "news_features_selected": [],
+      "ensemble": [
+        "xgb",
+        "lgb",
+        "rf"
+      ],
+      "error": null
+    },
+    "ethereum": {
+      "accuracy": 0.36,
+      "f1_macro": 0.353,
+      "cv_accuracy": 0.3833,
+      "cv_f1": 0.3767,
+      "n_features": 40,
+      "news_features_selected": [],
+      "ensemble": [
+        "xgb",
+        "lgb",
+        "rf"
+      ],
+      "error": null
+    }
+  }
+}

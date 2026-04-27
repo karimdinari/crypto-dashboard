@@ -1,0 +1,41 @@
+{
+  "pipeline_ran_at": "2026-04-23T22:34:41.352525+00:00",
+  "pipeline_version": "v3.0-news-aware",
+  "gold_path": "C:\\Institue Isimm\\Ing2_Info\\S2\\Data Engineering\\crypto-dashboard\\backend\\lakehouse\\gold\\market_features\\data.parquet",
+  "symbols": [
+    "bitcoin",
+    "ethereum"
+  ],
+  "results": {
+    "bitcoin": {
+      "training": {
+        "accuracy": null,
+        "f1_macro": null,
+        "n_train": null,
+        "n_test": null,
+        "cv_metrics": {},
+        "label_distribution": {},
+        "feature_importances": [],
+        "news_features_selected": [],
+        "news_feature_importances": [],
+        "error": "training failed"
+      },
+      "backtest": null
+    },
+    "ethereum": {
+      "training": {
+        "accuracy": null,
+        "f1_macro": null,
+        "n_train": null,
+        "n_test": null,
+        "cv_metrics": {},
+        "label_distribution": {},
+        "feature_importances": [],
+        "news_features_selected": [],
+        "news_feature_importances": [],
+        "error": "training failed"
+      },
+      "backtest": null
+    }
+  }
+}

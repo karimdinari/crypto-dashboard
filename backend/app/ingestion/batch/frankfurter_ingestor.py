@@ -22,7 +22,7 @@ from app.etl.bronze.write_bronze import write_bronze_table  # ✅ ADDED
 class FrankfurterIngestor(BaseIngestor):
     """Ingestor for Frankfurter forex rates with historical data support"""
 
-    def __init__(self, days: int = 30*12) -> None:
+    def __init__(self, days: int = 30*12*5) -> None:
         """
         Initialize Frankfurter ingestor.
         

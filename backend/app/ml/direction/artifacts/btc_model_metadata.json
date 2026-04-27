@@ -1,9 +1,9 @@
 {
   "model_type": "random_forest",
-  "accuracy": 0.5359477124183006,
-  "precision_up": 0.5,
-  "recall_up": 0.4084507042253521,
-  "f1": 0.4496124031007752,
+  "accuracy": 0.5109034267912772,
+  "precision_up": 0.5377643504531722,
+  "recall_up": 0.5689930740543421,
+  "f1": 0.5529381309862801,
   "features_used": [
     "open",
     "high",
