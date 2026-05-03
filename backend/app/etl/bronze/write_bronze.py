@@ -17,40 +17,6 @@ from app.utils.validation_utils import validate_required_columns
 logger = get_logger(__name__)
 
 
-def _dedupe_after_append(df: pd.DataFrame, dataset_name: str) -> pd.DataFrame:
-    """Drop duplicate business keys so daily re-runs do not stack identical rows."""
-    if df.empty:
-        return df
-    if dataset_name == "crypto_prices" and "symbol" in df.columns:
-        if "timestamp" not in df.columns:
-            return df.drop_duplicates(subset=["symbol", "ingestion_time"], keep="last", ignore_index=True)
-        has_ts = df["timestamp"].notna()
-        without_ts = df.loc[~has_ts]
-        with_ts = df.loc[has_ts].drop_duplicates(
-            subset=["symbol", "timestamp"], keep="last", ignore_index=True
-        )
-        return pd.concat([without_ts, with_ts], ignore_index=True)
-    if dataset_name == "forex_rates" and "symbol" in df.columns:
-        if "timestamp" not in df.columns:
-            return df.drop_duplicates(subset=["symbol", "ingestion_time"], keep="last", ignore_index=True)
-        has_ts = df["timestamp"].notna()
-        without_ts = df.loc[~has_ts]
-        with_ts = df.loc[has_ts].drop_duplicates(
-            subset=["symbol", "timestamp"], keep="last", ignore_index=True
-        )
-        return pd.concat([without_ts, with_ts], ignore_index=True)
-    if dataset_name == "metals_prices" and "symbol" in df.columns and "timestamp" in df.columns:
-        has_ts = df["timestamp"].notna()
-        without_ts = df.loc[~has_ts]
-        with_ts = df.loc[has_ts].drop_duplicates(
-            subset=["symbol", "timestamp"], keep="last", ignore_index=True
-        )
-        return pd.concat([without_ts, with_ts], ignore_index=True)
-    if dataset_name == "news" and "news_id" in df.columns:
-        return df.drop_duplicates(subset=["news_id"], keep="last", ignore_index=True)
-    return df
-
-
 DATASET_SCHEMA_MAP = {
     "crypto_prices": [
         "symbol",
@@ -154,11 +120,6 @@ def write_bronze_table(
     expected_columns = DATASET_SCHEMA_MAP[dataset_name]
     _validate_required_columns(df, expected_columns)
 
-    # Keep timestamp dtype consistent across append runs (e.g., CSV history + API snapshot).
-    if "timestamp" in df.columns:
-        df = df.copy()
-        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
-
     dataset_dir = Path(BRONZE_PATH) / dataset_name
     _ensure_directory(dataset_dir)
 
@@ -166,12 +127,7 @@ def write_bronze_table(
 
     if mode == "append" and output_file.exists():
         existing_df = pd.read_parquet(output_file)
-        if "timestamp" in existing_df.columns:
-            existing_df["timestamp"] = pd.to_datetime(
-                existing_df["timestamp"], utc=True, errors="coerce"
-            )
         df = pd.concat([existing_df, df], ignore_index=True)
-        df = _dedupe_after_append(df, dataset_name)
 
     df.to_parquet(output_file, index=False)
 

@@ -360,10 +360,11 @@ class BaseIngestor:
 
 | Ingestor | Source | Logic |
 |----------|--------|-------|
-| `CoinGeckoIngestor` | CoinGecko API | Fetch OHLCV for BTC/ETH; cache responses |
-| `FrankfurterIngestor` | Frankfurter API | Daily EUR/GBP/JPY vs USD |
-| `MetalsCSVIngestor` | Local CSV seeds | Load XAU_USD.csv, XAG_USD.csv |
-| `FinnhubNewsIngestor` | Finnhub API | Fetch crypto/finance news articles |
+| `CoinGeckoIngestor` | CoinGecko API | Fetch OHLCV for BTC/ETH; hourly polling with caching |
+| `FrankfurterIngestor` | Frankfurter API | Daily EUR/GBP/JPY vs USD rates |
+| `MetalsCSVIngestor` | Local CSV seeds | Load XAU_USD.csv, XAG_USD.csv from data/seeds/metals |
+| `FinnhubNewsIngestor` | Finnhub API | Fetch crypto/finance news articles daily |
+| `YFinanceIngestion` | YFinance | Alternative metals ingestion via yfinance package |
 
 **Flow:**
 ```
@@ -374,25 +375,35 @@ API Call → Parse Response → Normalize Schema → Write Bronze Parquet
 
 **Kafka Producer Pattern:**
 ```python
-BinanceWSProducer:
+BinanceWSProducer (binance_ws_producer.py):
   - WebSocket connection to Binance stream
   - @aggTrade endpoint → trade ticks every 100ms
-  - Emit: {timestamp, symbol, price, quantity} → Kafka topic
+  - Emit: {timestamp, symbol, price, quantity} → Kafka market_stream topic
   - Automatic reconnection on disconnect
   
-FinnhubNewsProducer:
+FinnhubNewsWSProducer (finnhub_news_ws_producer.py):
   - WebSocket to Finnhub news stream
-  - Emit news → Kafka topic
-  - Include: headline, summary, sentiment_placeholder
+  - Emit news → Kafka news_stream topic
+  - Include: headline, summary, sentiment placeholders
+  
+YFinanceMetalsProducer (yfinance_metals_producer.py):
+  - Periodic polling of YFinance metals data
+  - Emit gold/silver prices to Kafka
 ```
 
-**Kafka Consumer Pattern:**
+**Kafka Consumer Patterns:**
 ```python
-KafkaConsumer:
+KafkaConsumer (kafka_consumer.py):
   - Subscribe to market_stream topic
   - Deserialize JSON messages
   - Accumulate into 5-minute micro-batches
   - Write to Bronze streaming partition
+  - Read latest per symbol for real-time ticks
+  
+NewsKafkaConsumer (news_kafka_consumer.py):
+  - Subscribe to news_stream topic
+  - Deserialize news JSON messages
+  - Batch process and append to Bronze news partition
 ```
 
 ### 3. Lakehouse Layer (`app/etl/`)
@@ -421,9 +432,13 @@ def write_bronze(df):
 #### Silver Layer (`silver/`)
 
 **Modules:**
-- `clean_market_silver.py` → Unified market data (crypto + forex + metals)
-- `clean_news_silver.py` → News articles with validation
-- `news_sentiment_silver.py` → FinBERT sentiment scores
+- `clean_market_silver.py` → Unified market data orchestrator (delegates to specific cleaners)
+- `clean_crypto_silver.py` → Cryptocurrency price data cleaning and deduplication
+- `clean_forex_silver.py` → FX rate data cleaning and standardization
+- `clean_metals_silver.py` → Precious metals (gold/silver) cleaning
+- `clean_news_silver.py` → News articles with validation and deduplication
+- `news_sentiment_silver.py` → FinBERT sentiment scoring and labeling
+- `schema_silver.py` → Pydantic schemas for validation
 
 **Quality Rules:**
 ```python
@@ -618,48 +633,48 @@ For i = train_window to total_samples:
 **Scheduling:**
 ```python
 dag_id = "market_batch_pipeline"
-schedule_interval = "@daily"  # 00:00 UTC
+schedule_interval = "@hourly"  # Runs every hour
+start_date = datetime(2026, 4, 15)
+catchup = False  # Don't backfill past runs
 ```
 
-**Tasks:**
+**Tasks (BashOperators):**
 ```
-1. ingest_crypto_prices
-   └─→ CoinGeckoIngestor.fetch_and_store()
+1. run_batch_ingestion
+   └─→ Executes app.ingestion.batch.run_batch_ingestion
+       - CoinGecko, Frankfurter, Metals CSV, Finnhub APIs
+       - Writes all sources to Bronze Parquet
 
-2. ingest_forex_rates
-   └─→ FrankfurterIngestor.fetch_and_store()
+2. clean_market_silver
+   └─→ Executes app.etl.silver.clean_market_silver
+       - Deduplicates by (symbol, timestamp)
+       - Validates price ranges, volumes
+       - Fills NaNs and standardizes to UTC
+       - Outputs to Silver market_data/
 
-3. ingest_metals_prices
-   └─→ MetalsCSVIngestor.load_local()
+3. clean_news_silver
+   └─→ Executes app.etl.silver.clean_news_silver
+       - Validates news articles
+       - Removes duplicates
+       - Outputs to Silver news_data/
 
-4. ingest_news
-   └─→ FinnhubNewsIngestor.fetch_and_store()
+4. build_gold_market
+   └─→ Executes app.etl.gold.build_gold_market
+       - Calculates 12 technical indicators
+       - Builds correlation features
+       - Outputs to Gold market_features/
 
-5. [dependency] clean_silver
-   └─→ run_silver_pipeline()
-       - clean_market_silver.py
-       - clean_news_silver.py
-       - news_sentiment_silver.py
-
-6. [dependency] build_features
-   └─→ build_market_features()
-       - Apply 12 technical indicators
-
-7. [dependency] train_ml_model
-   └─→ train_direction_model()
-       - Walk-forward backtest
-       - Save best model
-
-8. [dependency] generate_signals
-   └─→ predict_latest()
-       - Generate trading signals
+5. build_gold_news
+   └─→ Executes app.etl.gold.build_gold_news
+       - Aggregates news sentiment
+       - Creates daily news summaries
+       - Outputs to Gold news_aggregates/
 ```
 
 **DAG Flow:**
 ```
-[ingest tasks] ──┐
-                 ├─→ clean_silver ──→ build_features ──→ train_ml ──→ signals
-[ingest tasks] ──┘
+run_batch_ingestion ──┬─→ clean_market_silver ──→ build_gold_market
+                      └─→ clean_news_silver ──→ build_gold_news
 ```
 
 ### 7. API Layer (`app/api/`)
@@ -674,14 +689,16 @@ schedule_interval = "@daily"  # 00:00 UTC
 - Docs: http://localhost:8000/docs
 ```
 
-**Routers:**
-| Route | Purpose |
-|-------|---------|
-| `/api/markets` | Market data queries (price history, stats) |
-| `/api/news` | News articles + sentiment |
-| `/api/pipeline` | Ingestion/ETL status |
-| `/api/predictions` | BTC direction predictions |
-| `/api/signals` | Trading signals + confidence |
+**Routers (7 total):**
+| Route | Module | Purpose |
+|-------|--------|----------|
+| `/api/markets` | `routes/markets.py` | Asset list, OHLCV history, stream ticks, WebSocket |
+| `/api/news` | `routes/news.py` | Latest news articles + sentiment scores |
+| `/api/pipeline` | `routes/pipeline.py` | Ingestion/ETL pipeline status and logs |
+| `/api/predictions` | `routes/predictions.py` | BTC direction predictions with probabilities |
+| `/api/signals` | `routes/signals.py` | Trading signals (BUY/SELL/HOLD) + confidence |
+| `/api/correlation` | `routes/correlation.py` | Cross-asset correlation matrix |
+| `/api/articles` | `routes/article_reader.py` | Full news article content retrieval |
 
 **Health Check:**
 ```
@@ -701,12 +718,17 @@ GET /healthz → {"status": "ok"}
 - **State:** React Query (TanStack Query)
 - **Testing:** Vitest
 
-### Key Pages
-1. **Market Dashboard** - Real-time price charts
-2. **Predictions Panel** - BTC direction forecast + confidence
-3. **News Feed** - Latest market news with sentiment
-4. **Signal History** - Past predictions + accuracy
-5. **Correlations View** - Cross-asset correlation heatmap
+### Key Pages (10 Pages)
+1. **Index** - Main dashboard landing page
+2. **Portfolio** - Asset allocation and holdings view
+3. **Streaming** - Real-time price charts and ticks via WebSocket
+4. **Predictions** - BTC direction forecasts with confidence intervals
+5. **News** - Latest market news with FinBERT sentiment scores
+6. **Signals** - Trading signals (BUY/SELL/HOLD) with historical accuracy
+7. **History** - Past predictions and backtesting results
+8. **Pipeline** - ETL pipeline status, DAG runs, ingestion logs
+9. **Correlations** - Cross-asset correlation heatmap and analysis
+10. **Alerts** - Custom price alerts and signal notifications
 
 ### API Integration
 ```typescript
@@ -727,76 +749,70 @@ GET /signals/:period   // Signal history
 
 ## How It All Works - Example Flow
 
-### Scenario: Daily Market Prediction
+### Scenario: Hourly Market Pipeline Execution
 
-**Day 1 - 00:00 UTC (Airflow triggers DAG)**
+**Every Hour - Airflow triggers DAG (market_batch_pipeline)**
 
 ```
-Step 1: INGESTION (1 hour)
-├─ Fetch 1 year BTC history from CoinGecko → 365 records
-├─ Fetch EUR/USD, GBP/USD from Frankfurter → 365 records
-├─ Load XAU/USD, XAG/USD from local CSV → 365 records
-├─ Fetch news articles from Finnhub → 100 articles
-└─ Write all to Bronze layer (Parquet)
+Step 1: INGESTION (~5 mins)
+├─ Fetch latest OHLCV from CoinGecko (BTC/ETH) → append to Bronze
+├─ Fetch current EUR/USD, GBP/USD, JPY/USD from Frankfurter → append to Bronze
+├─ Load XAU_USD, XAG_USD from local CSV seeds → append to Bronze
+├─ Fetch latest news articles from Finnhub → append to Bronze
+└─ Total: All ingested data written to Bronze layer (Parquet)
 
-Step 2: CLEANING (30 mins)
-├─ Remove duplicates by (symbol, timestamp)
-├─ Fill missing prices (forward fill)
-├─ Validate price ranges (0 < price < max_expected)
-├─ Standardize to UTC
-├─ Drop invalid records
-└─ Write to Silver layer
+Step 2: SILVER CLEANING (~10 mins)
+├─ clean_market_silver.py:
+│  ├─ Deduplicates by (symbol, timestamp)
+│  ├─ Fills NaN prices (forward fill)
+│  ├─ Validates: 0 < price ≤ max_expected, volume ≥ 0
+│  ├─ Standardizes to UTC
+│  └─ Outputs to silver/market_data/
+├─ clean_news_silver.py:
+│  ├─ Validates article structure
+│  ├─ Removes duplicates by headline
+│  └─ Outputs to silver/news_data/
+└─ All quality checks passed
 
-Step 3: FEATURE ENGINEERING (30 mins)
-├─ For each record, compute:
-│  ├─ returns = (close[t] - close[t-1]) / close[t-1]
-│  ├─ ma7 = mean(close[t-6:t])
-│  ├─ ma30 = mean(close[t-29:t])
-│  ├─ volatility = std(returns[t-19:t])
-│  ├─ rsi = 100 - (100 / (1 + rs))
-│  └─ ... 6 more indicators
-├─ Build target = (close[t+1] > close[t]) → 1/0
-└─ Write to Gold layer
+Step 3: GOLD FEATURE ENGINEERING (~8 mins)
+├─ build_gold_market.py:
+│  ├─ For each symbol, compute 12 indicators:
+│  │  ├─ returns, price_diff, ma7, ma30
+│  │  ├─ volatility, rsi, macd, macd_signal
+│  │  ├─ volume_ma7, relative_volume, correlation_btc
+│  │  └─ day_of_week
+│  └─ Outputs to gold/market_features/
+├─ build_gold_news.py:
+│  ├─ Aggregates daily news by symbol
+│  ├─ Applies FinBERT sentiment analysis
+│  └─ Outputs to gold/news_aggregates/
+└─ All features ready for ML
 
-Step 4: ML TRAINING (45 mins)
-├─ Load 365 BTC records with targets
-├─ Split: last 200 days for walk-forward
-├─ For each day t from day 200 to 364:
-│  ├─ Train on [t-200:t]
-│  ├─ Predict day t
-│  ├─ Compare to actual
-├─ Calculate metrics:
-│  ├─ Logistic Regression: accuracy=54.2%
-│  ├─ Random Forest: accuracy=56.8% ← BEST
-│  └─ XGBoost: accuracy=55.1%
-├─ Retrain Random Forest on all 365 days
-└─ Save to artifacts/
+Step 4: API SERVES UPDATED DATA
+├─ GET /api/markets → Latest assets with 12 indicators
+├─ GET /api/news → Latest articles with sentiment
+├─ GET /api/correlation → Updated correlation matrix
+├─ WebSocket → Real-time streaming ticks from Kafka
+└─ Frontend refreshes automatically
 
-Step 5: PREDICTION (5 mins)
-├─ Load latest BTC record (Day 365)
-├─ Extract features using model's feature list
-├─ Random Forest.predict_proba() → [0.42, 0.58]
-├─ prob_up = 0.58 → SIGNAL = "BUY" (> 0.60 threshold? NO)
-└─ Return: HOLD (0.40 < 0.58 < 0.60)
+Step 5: ML TRAINING (Optional, if scheduled)
+├─ train_direction_model.py (if enabled):
+│  ├─ Load full BTC dataset from Gold
+│  ├─ Run walk-forward backtest (200-day window)
+│  ├─ Evaluate 3 model types: Logistic, RF, XGBoost
+│  ├─ Select best model and retrain on full history
+│  └─ Save to ml/direction/artifacts/
+└─ Updated predictions available
 
-Step 6: API SERVES RESPONSE
-├─ GET /api/predictions
-├─ Response:
-│  {
-│    "symbol": "BTC/USD",
-│    "signal": "HOLD",
-│    "probability_up": 0.58,
-│    "model_type": "random_forest",
-│    "accuracy": 0.568
-│  }
-└─ Frontend displays to user
-
-Step 7: REAL-TIME STREAMING (Continuous)
-├─ Binance WebSocket → BTC ticks every 100ms
-├─ Kafka producer publishes to market_stream topic
-├─ Consumer accumulates → 5-min bars
+Step 6: REAL-TIME STREAMING (Parallel, Continuous)
+├─ Binance WebSocket → BTC/ETH ticks every 100ms
+├─ Kafka producer emits to market_stream topic
+├─ Kafka consumer batches → 5-min aggregates
 ├─ Append to Bronze streaming partition
-└─ Frontend receives via WebSocket or polling
+├─ Frontend WebSocket subscribers receive live updates
+└─ No wait for batch pipeline
+
+Step 7: TOTAL TIME: ~20-30 mins (hourly execution)
 ```
 
 ---
