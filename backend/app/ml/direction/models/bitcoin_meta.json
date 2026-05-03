@@ -1,0 +1,407 @@
+{
+  "symbol": "bitcoin",
+  "model_version": "xgb-v3.0-ensemble-news",
+  "n_train": 2974,
+  "n_test": 744,
+  "n_features_total": 103,
+  "n_features_selected": 40,
+  "features": [
+    "rev_setup",
+    "is_friday",
+    "bb_squeeze",
+    "trending",
+    "low_vol",
+    "day_of_week",
+    "is_monday",
+    "rsi_oversold",
+    "rsi_overbought",
+    "vol_lag5",
+    "high_vol",
+    "consec_up",
+    "adx_proxy",
+    "rsi_zone",
+    "ma7",
+    "is_monend",
+    "rsi_lag3",
+    "ma14",
+    "vol_lag3",
+    "bb_pct",
+    "macd",
+    "ret_lag7",
+    "rsi",
+    "stoch_k",
+    "ma14_vs_ma60",
+    "price_vs_ma30",
+    "atr_pct",
+    "range_r",
+    "returns",
+    "vol_lag1",
+    "ma7_vs_ma30",
+    "ma60",
+    "macd_signal",
+    "price_vs_ma14",
+    "cum_ret5",
+    "month",
+    "max_ret5",
+    "ma30",
+    "macd_hist_d1",
+    "rsi_lag5"
+  ],
+  "all_features": [
+    "returns",
+    "price_diff",
+    "ma7",
+    "ma30",
+    "volatility",
+    "volume_change",
+    "correlation",
+    "rsi",
+    "macd",
+    "macd_signal",
+    "macd_histogram",
+    "day_of_week",
+    "volume_ma7",
+    "relative_volume",
+    "news_count",
+    "sentiment_score",
+    "sentiment_positive",
+    "sentiment_negative",
+    "sentiment_neutral",
+    "sentiment_std",
+    "sentiment_max",
+    "sentiment_min",
+    "sent_ma3",
+    "sent_ma7",
+    "sent_trend",
+    "sent_d1",
+    "sent_d2",
+    "sent_accel",
+    "news_vel1",
+    "news_ma7",
+    "news_burst",
+    "sent_regime",
+    "sent_overbought",
+    "sent_oversold",
+    "sent_lag1",
+    "sent_lag2",
+    "sent_lag3",
+    "sent_lag1_diff",
+    "bull_bear_ratio",
+    "news_price_divergence",
+    "ma14",
+    "ma60",
+    "price_vs_ma7",
+    "price_vs_ma14",
+    "price_vs_ma30",
+    "price_vs_ma60",
+    "ma7_vs_ma30",
+    "ma14_vs_ma60",
+    "ma7_slope",
+    "ma30_slope",
+    "rsi_zone",
+    "rsi_oversold",
+    "rsi_overbought",
+    "rsi_change",
+    "rsi_change3",
+    "macd_cross",
+    "macd_hist_d1",
+    "macd_hist_d2",
+    "stoch_k",
+    "stoch_k_lag1",
+    "vol_zscore",
+    "vol_ratio",
+    "high_vol",
+    "low_vol",
+    "atr_pct",
+    "close_vs_atr",
+    "bb_width",
+    "bb_pct",
+    "bb_squeeze",
+    "adx_proxy",
+    "trending",
+    "vol_z14",
+    "obv_slope",
+    "ret_lag1",
+    "ret_lag2",
+    "ret_lag3",
+    "ret_lag4",
+    "ret_lag5",
+    "ret_lag6",
+    "ret_lag7",
+    "rsi_lag1",
+    "vol_lag1",
+    "rsi_lag3",
+    "vol_lag3",
+    "rsi_lag5",
+    "vol_lag5",
+    "cum_ret3",
+    "cum_ret5",
+    "cum_ret10",
+    "cum_ret20",
+    "skew10",
+    "kurt10",
+    "max_ret5",
+    "min_ret5",
+    "range_r",
+    "month",
+    "weekofyr",
+    "is_monend",
+    "is_monday",
+    "is_friday",
+    "consec_up",
+    "consec_dn",
+    "rev_setup"
+  ],
+  "news_features_available": [
+    "news_count",
+    "sentiment_score",
+    "sentiment_positive",
+    "sentiment_negative",
+    "sentiment_neutral",
+    "sentiment_std",
+    "sentiment_max",
+    "sentiment_min",
+    "sent_ma3",
+    "sent_ma7",
+    "sent_trend",
+    "sent_d1",
+    "sent_d2",
+    "sent_accel",
+    "news_vel1",
+    "news_ma7",
+    "news_burst",
+    "sent_regime",
+    "sent_overbought",
+    "sent_oversold",
+    "sent_lag1",
+    "sent_lag2",
+    "sent_lag3",
+    "sent_lag1_diff",
+    "bull_bear_ratio",
+    "news_price_divergence"
+  ],
+  "news_features_selected": [],
+  "label_map": {
+    "0": "SELL",
+    "1": "HOLD",
+    "2": "BUY"
+  },
+  "test_accuracy": 0.3723,
+  "test_f1_macro": 0.3686,
+  "cv_metrics": {
+    "cv_accuracy": 0.3697,
+    "cv_f1_macro": 0.3599,
+    "n_folds": 5
+  },
+  "classification_report": {
+    "SELL": {
+      "precision": 0.2975,
+      "recall": 0.5920398009950248,
+      "f1-score": 0.39600665557404324,
+      "support": 201.0
+    },
+    "HOLD": {
+      "precision": 0.5732484076433121,
+      "recall": 0.2980132450331126,
+      "f1-score": 0.39215686274509803,
+      "support": 302.0
+    },
+    "BUY": {
+      "precision": 0.36363636363636365,
+      "recall": 0.2821576763485477,
+      "f1-score": 0.3177570093457944,
+      "support": 241.0
+    },
+    "accuracy": 0.37231182795698925,
+    "macro avg": {
+      "precision": 0.41146159042655855,
+      "recall": 0.3907369074588951,
+      "f1-score": 0.36864017588831194,
+      "support": 744.0
+    },
+    "weighted avg": {
+      "precision": 0.4308533370223708,
+      "recall": 0.37231182795698925,
+      "f1-score": 0.3690969752308316,
+      "support": 744.0
+    }
+  },
+  "feature_importances": [
+    [
+      "rev_setup",
+      0.03533964231610298
+    ],
+    [
+      "day_of_week",
+      0.03411315008997917
+    ],
+    [
+      "is_monday",
+      0.03318892791867256
+    ],
+    [
+      "low_vol",
+      0.031224433332681656
+    ],
+    [
+      "high_vol",
+      0.030546629801392555
+    ],
+    [
+      "trending",
+      0.029968436807394028
+    ],
+    [
+      "is_friday",
+      0.028931431472301483
+    ],
+    [
+      "consec_up",
+      0.028349030762910843
+    ],
+    [
+      "bb_squeeze",
+      0.027786700055003166
+    ],
+    [
+      "vol_lag5",
+      0.026999318972229958
+    ],
+    [
+      "rsi_overbought",
+      0.026299847289919853
+    ],
+    [
+      "rsi_oversold",
+      0.025940537452697754
+    ],
+    [
+      "rsi_zone",
+      0.02562054805457592
+    ],
+    [
+      "ma7",
+      0.02502894587814808
+    ],
+    [
+      "ma14",
+      0.024689920246601105
+    ]
+  ],
+  "news_feature_importances": [
+    [
+      "news_count",
+      0.0
+    ],
+    [
+      "sentiment_score",
+      0.0
+    ],
+    [
+      "sentiment_positive",
+      0.0
+    ],
+    [
+      "sentiment_negative",
+      0.0
+    ],
+    [
+      "sentiment_neutral",
+      0.0
+    ],
+    [
+      "sentiment_std",
+      0.0
+    ],
+    [
+      "sentiment_max",
+      0.0
+    ],
+    [
+      "sentiment_min",
+      0.0
+    ],
+    [
+      "sent_ma3",
+      0.0
+    ],
+    [
+      "sent_ma7",
+      0.0
+    ],
+    [
+      "sent_trend",
+      0.0
+    ],
+    [
+      "sent_d1",
+      0.0
+    ],
+    [
+      "sent_d2",
+      0.0
+    ],
+    [
+      "sent_accel",
+      0.0
+    ],
+    [
+      "news_vel1",
+      0.0
+    ],
+    [
+      "news_ma7",
+      0.0
+    ],
+    [
+      "news_burst",
+      0.0
+    ],
+    [
+      "sent_regime",
+      0.0
+    ],
+    [
+      "sent_overbought",
+      0.0
+    ],
+    [
+      "sent_oversold",
+      0.0
+    ],
+    [
+      "sent_lag1",
+      0.0
+    ],
+    [
+      "sent_lag2",
+      0.0
+    ],
+    [
+      "sent_lag3",
+      0.0
+    ],
+    [
+      "sent_lag1_diff",
+      0.0
+    ],
+    [
+      "bull_bear_ratio",
+      0.0
+    ],
+    [
+      "news_price_divergence",
+      0.0
+    ]
+  ],
+  "label_distribution": {
+    "SELL": 1012,
+    "HOLD": 1456,
+    "BUY": 1250
+  },
+  "ensemble_types": [
+    "xgb",
+    "lgb",
+    "rf"
+  ]
+}
